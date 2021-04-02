@@ -1,12 +1,10 @@
 cmsrel CMSSW_10_6_8
 cd CMSSW_10_6_8/src/
-git cms-init
+cmsenv
 mkdir EM_GNN_ID
 cd EM_GNN_ID
-mkedanlzr EM_Skimmer
+git clone git@github.com:UMN-CMS/EM_Skimmer.git
 cd EM_Skimmer
-cp Photon_RefinedRecHit_NTuplizer.cc BuildFile.xml plugins/
-cp Photon_RecHit_AOD_cfg.py crab_Photon_NTuplizer_cfg.py test/ 
 scram b -j4
 
 
