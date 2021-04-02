@@ -117,7 +117,7 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
 //     bool GetGenMatchType(const reco::Photon& Photon, const reco::GenParticle& GenColl, int pdgId, double dRThresh);
 // Get the hits from the ES
 //     std::vector<GlobalPoint> GetESPlaneRecHits(const reco::SuperCluster& sc, unsigned int planeIndex) const;
-     void GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int elenum, unsigned int planeIndex);
+     void GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int phonum, unsigned int planeIndex);
 
 //   clear the vectors 
      void ClearTreeVectors();
@@ -146,7 +146,7 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
      std::vector<float> Pho_eta_;
      std::vector<float> Pho_phi_;
      std::vector<float> Pho_energy_;
-     std::vector<float> Pho_ecal_energy_;
+     std::vector<float> Pho_ecal_mustache_energy_;
 
      std::vector<float> Pho_R9;
      std::vector<float> Pho_S4;
@@ -277,63 +277,52 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
    nPhotons_ = 0;
    const EcalRecHitCollection *recHitsEB = clustertools_NoZS->getEcalEBRecHitCollection();
    const EcalRecHitCollection *recHitsEE = clustertools_NoZS->getEcalEERecHitCollection();
-
-   int pho_counter = 0;
    for (size_t i = 0; i < photons->size(); ++i){
-
-	if (pho_counter == 2) break;
+	if (nPhotons_ == 2) break;
 	const auto pho = photons->ptrAt(i);
         if( pho->pt() < 10 ) continue;
-//	if(!(pho->ecalDrivenSeed())) continue;
-//	if(pho->parentSuperCluster().isNull()) continue;
 	const SuperClusterRef& sc = pho->superCluster();
 	std::vector< std::pair<DetId, float> > hitsAndFractions = sc->hitsAndFractions();
 	isEB = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalBarrel);
 	isEE = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalEndcap);
-//	if(!isEB) continue;
 	EBDetId* DidEB;
 	EEDetId* DidEE;
-//	DetId*   Did;
 	EcalRecHitCollection::const_iterator oneHit;
         for (const auto&  detitr : hitsAndFractions) {
 		if(isEB){
 			DidEB = new EBDetId(detitr.first.rawId());
 			DetId Did   = detitr.first.rawId();
                         shared_ptr<const CaloCellGeometry> geom = ecalEBGeom->getGeometry(Did);
-//			cout << "Barrel" << std::setprecision(4) << " Eta = " <<geom->etaPos() << " : " <<" Phi = "<< geom->phiPos() << " 3D position" << geom->getPosition().z() << endl;
 			oneHit = recHitsEB->find( (detitr.first) ) ;
-			iEta[i].push_back(DidEB->ieta());
-			iPhi[i].push_back(DidEB->iphi());
-			Hit_Eta[i].push_back(geom->etaPos());
-			Hit_Phi[i].push_back(geom->phiPos());
-			Hit_X[i].push_back(geom->getPosition().x());
-			Hit_Y[i].push_back(geom->getPosition().y());
-			Hit_Z[i].push_back(geom->getPosition().z());
+			iEta[nPhotons_].push_back(DidEB->ieta());
+			iPhi[nPhotons_].push_back(DidEB->iphi());
+			Hit_Eta[nPhotons_].push_back(geom->etaPos());
+			Hit_Phi[nPhotons_].push_back(geom->phiPos());
+			Hit_X[nPhotons_].push_back(geom->getPosition().x());
+			Hit_Y[nPhotons_].push_back(geom->getPosition().y());
+			Hit_Z[nPhotons_].push_back(geom->getPosition().z());
 		}
 		else if(isEE){
 			DidEE = new EEDetId(detitr.first.rawId());
 			DetId Did   = detitr.first.rawId();
 			shared_ptr<const CaloCellGeometry> geom = ecalEEGeom->getGeometry(Did);
-//			cout << "Endcap" <<std::setprecision(4) << " Eta = " <<geom->etaPos() << " : " <<" Phi = "<< geom->phiPos() << " Crystal Z : " << geom->getPosition().z() << endl;
                         oneHit = recHitsEE->find( (detitr.first) ) ;
-                        iEta[i].push_back(DidEE->ix());
-                        iPhi[i].push_back(DidEE->iy());
-			Hit_Eta[i].push_back(geom->etaPos());
-                        Hit_Phi[i].push_back(geom->phiPos());
-                        Hit_X[i].push_back(geom->getPosition().x());
-                        Hit_Y[i].push_back(geom->getPosition().y());
-                        Hit_Z[i].push_back(geom->getPosition().z());
+                        iEta[nPhotons_].push_back(DidEE->ix());
+                        iPhi[nPhotons_].push_back(DidEE->iy());
+			Hit_Eta[nPhotons_].push_back(geom->etaPos());
+                        Hit_Phi[nPhotons_].push_back(geom->phiPos());
+                        Hit_X[nPhotons_].push_back(geom->getPosition().x());
+                        Hit_Y[nPhotons_].push_back(geom->getPosition().y());
+                        Hit_Z[nPhotons_].push_back(geom->getPosition().z());
 		}
 	
-		RecHitEn[i].push_back(oneHit->energy());
-		RecHitFrac[i].push_back(detitr.second);
-
-//		cout<<endl<<" IEta = "<< Did->ieta() << " IPhi = "<< Did->iphi()  << " The fraction is  =  "<< detitr.second << " Energy is = "<< oneHit->energy() <<endl;		
+		RecHitEn[nPhotons_].push_back(oneHit->energy());
+		RecHitFrac[nPhotons_].push_back(detitr.second);
 	}  
 
 	if(isEE){
-		GetESPlaneRecHits(*sc, geo, i, 1);     
- 		GetESPlaneRecHits(*sc, geo, i, 2);
+		GetESPlaneRecHits(*sc, geo, nPhotons_, 1);     
+ 		GetESPlaneRecHits(*sc, geo, nPhotons_, 2);
 	}
 
         nPhotons_++;
@@ -341,7 +330,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
         Pho_eta_.push_back( pho->superCluster()->eta() );
         Pho_phi_.push_back( pho->superCluster()->phi() );
         Pho_energy_.push_back( pho->energy() );
-	Pho_ecal_energy_.push_back( pho->energy() );
+	Pho_ecal_mustache_energy_.push_back( sc->energy() );
         Pho_R9.push_back(pho->full5x5_r9());
         Pho_SigIEIE.push_back(pho->full5x5_sigmaIetaIeta());
         Pho_SigIPhiIPhi.push_back(pho->full5x5_showerShapeVariables().sigmaIphiIphi);
@@ -357,14 +346,12 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
         Pho_SC_ESEnByRawE.push_back( (pho->superCluster()->preshowerEnergy())/(pho->superCluster()->rawEnergy()) );
 //        Pho_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
 
-
- // Look up and save the ID decisions
-//   	bool isPassMedium = (*medium_id_decisions)[ele];
-//        bool isPassTight  = (*tight_id_decisions)[ele];
+////// Look up and save the ID decisions
+//        bool isPassMedium = (*medium_id_decisions)[pho];
+//        bool isPassTight  = (*tight_id_decisions)[pho];
 //        passMediumId_.push_back( (int) isPassMedium);
 //        passTightId_.push_back ( (int) isPassTight );
 
-	pho_counter++;        
    }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -445,7 +432,7 @@ Photon_RefinedRecHit_NTuplizer::beginJob()
         T->Branch("eta" ,  &Pho_eta_ );
         T->Branch("phi" ,  &Pho_phi_ );
         T->Branch("energy", &Pho_energy_);
-	T->Branch("energy_ecal", &Pho_ecal_energy_);
+	T->Branch("energy_ecal_mustache", &Pho_ecal_mustache_energy_);
 
         T->Branch("passMediumId" ,  &passMediumId_ );
         T->Branch("passTightId"  ,  &passTightId_ );
@@ -493,7 +480,7 @@ bool Photon_RefinedRecHit_NTuplizer::GetGenMatchType(const reco::Photon& Photon,
 
 
 // Extract the rechits of the SC from the ES layers
-void Photon_RefinedRecHit_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int elenum, unsigned int planeIndex) {
+void Photon_RefinedRecHit_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int phonum, unsigned int planeIndex) {
         double RawenergyPlane = 0.;
         double pfRawenergyPlane = 0.;
 //      if(!_ESRechitsHandle.isValid())
@@ -518,12 +505,12 @@ void Photon_RefinedRecHit_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster&
 //                                        std::cout << " ES energy = " << esItr->energy() << " pf energy = " << (*rh).second << std::endl;
                                         if((int) rhid.plane() == (int) planeIndex) {
 						std::shared_ptr<const CaloCellGeometry> geom = ecalESGeom->getGeometry(rhid);
-						Hit_ES_Eta[elenum].push_back( geom->etaPos() );
-                                                Hit_ES_Phi[elenum].push_back( geom->phiPos() );
-						Hit_ES_X[elenum].push_back( geom->getPosition().x() );
-						Hit_ES_Y[elenum].push_back( geom->getPosition().y() );
-						Hit_ES_Z[elenum].push_back( geom->getPosition().z() ) ;
-						ES_RecHitEn[elenum].push_back(esItr->energy());
+						Hit_ES_Eta[phonum].push_back( geom->etaPos() );
+                                                Hit_ES_Phi[phonum].push_back( geom->phiPos() );
+						Hit_ES_X[phonum].push_back( geom->getPosition().x() );
+						Hit_ES_Y[phonum].push_back( geom->getPosition().y() );
+						Hit_ES_Z[phonum].push_back( geom->getPosition().z() ) ;
+						ES_RecHitEn[phonum].push_back(esItr->energy());
 //						std::cout << "Preshower" <<std::setprecision(4) << " Eta = " <<geom->etaPos() << " : " <<" Phi = "<< geom->phiPos() << " 3D position" << geom->getPosition().z() << std::endl;
                                                 RawenergyPlane += esItr->energy();
                                                 pfRawenergyPlane += rh->second;
@@ -585,7 +572,7 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
 	Pho_eta_.clear();
 	Pho_phi_.clear();
 	Pho_energy_.clear();
-	Pho_ecal_energy_.clear();
+	Pho_ecal_mustache_energy_.clear();
 	Pho_R9.clear();
 	Pho_S4.clear();
 	Pho_SigIEIE.clear();

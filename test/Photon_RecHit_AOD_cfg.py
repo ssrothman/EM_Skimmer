@@ -7,7 +7,7 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 
 process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(2500)
 
@@ -27,8 +27,8 @@ print(options.inputFile)
 process.source = cms.Source("PoolSource",
                                 # replace 'myfile.root' with the source file you want to use
                                 fileNames = cms.untracked.vstring(
-#            'root://cms-xrd-global.cern.ch///store/mc/RunIIWinter19PFCalibDR/DoublePhoton_FlatPt-5To300/AODSIM/2018ConditionsFlatPU0to70ECALGT_105X_upgrade2018_realistic_IdealEcalIC_v4-v1/60000/AD91349A-854D-DD47-B82A-B77A907D1A9C.root'
-	    'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20toInf_DoubleEMEnriched_MGG-40to80_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v2/00000/CE71D346-5BDC-9348-8887-872D3C69264D.root'
+     #       'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/DoublePhoton_FlatPt-5To300/AODSIM/FlatPU0to70RAW_106X_upgrade2018_realistic_v11_L1v1_ext1-v2/00000/6F7BDF5D-2A6A-7342-993F-E8DBABF920C8.root'
+            'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/250000/26B3A9F9-290D-6346-8862-2BE71645C57D.root'
 #                options.inputFile
                 )
                             )
@@ -41,21 +41,21 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
 
 from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
 dataFormat = DataFormat.AOD
-switchOnVIDElectronIdProducer(process, dataFormat)
+switchOnVIDPhotonIdProducer(process, dataFormat)
 
 # define which IDs we want to produce
-my_id_modules = ['RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V1_cff']
+my_id_modules = ['RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V1_cff','RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V1p1_cff','RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V2_cff']
 
 for idmod in my_id_modules:
-        setupAllVIDIdsInModule(process, idmod, setupVIDElectronSelection)
+        setupAllVIDIdsInModule(process, idmod, setupVIDPhotonSelection)
 
 process.nTuplelize = cms.EDAnalyzer('Photon_RefinedRecHit_NTuplizer',
         rhoFastJet = cms.InputTag("fixedGridRhoFastjetAll"),
         photons = cms.InputTag("gedPhotons"),
         genParticles = cms.InputTag("genParticles"),
-        #Cut Based Id
-        eleMediumIdMap = cms.InputTag("egmPhotonIDs:mvaPhoID-RunIIFall17-v1-wp90"),
-        eleTightIdMap = cms.InputTag("egmPhotonIDs:mvaPhoID-RunIIFall17-v1-wp90")
+        #MVA Based Id
+        eleMediumIdMap = cms.InputTag(""),
+        eleTightIdMap = cms.InputTag("")
 	)
 
 
@@ -66,5 +66,5 @@ process.TFileService = cms.Service("TFileService",
   )
 
 
-process.p = cms.Path(process.egmGsfElectronIDSequence * process.nTuplelize)
+process.p = cms.Path(process.egmPhotonIDSequence*process.nTuplelize)
 
