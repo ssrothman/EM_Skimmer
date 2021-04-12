@@ -357,10 +357,10 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////// Gen Stuff hardcaded for status 1 photons for now /////////////////////////////////////
+//////////////////////// Gen Stuff hardcoded for isHardProcess photons for now /////////////////////////////////////
 
   for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
-        if( part->status()==1  && abs(part->pdgId())==22 ){
+        if( part->isHardProcess()  && abs(part->pdgId())==22 ){
                 Pho_Gen_Pt.push_back(part->pt());
                 Pho_Gen_Eta.push_back(part->eta());
                 Pho_Gen_Phi.push_back(part->phi());

@@ -7,29 +7,31 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 
 process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100000) )
 
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(2500)
 
-options = VarParsing.VarParsing('standard')
+#options = VarParsing.VarParsing('standard')
+options = VarParsing.VarParsing('analysis')
 
-options.register('inputFile',
-        "~/",
-        VarParsing.VarParsing.multiplicity.singleton,
-        VarParsing.VarParsing.varType.string,
-        "File containing a list of the EXACT location of the output file  (default = ~/)"
-        )
+#options.register('inputFile',
+#        "~/",
+#        VarParsing.VarParsing.multiplicity.singleton,
+#        VarParsing.VarParsing.varType.string,
+#        "File containing a list of the EXACT location of the output file  (default = ~/)"
+#        )
 
 
 options.parseArguments()
-options.inputFile = 'root://eoscms//' + options.inputFile
-print(options.inputFile)
+#options.inputFile = 'root://eoscms//' + options.inputFile
+#print(options.inputFile)
 process.source = cms.Source("PoolSource",
                                 # replace 'myfile.root' with the source file you want to use
                                 fileNames = cms.untracked.vstring(
      #       'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/DoublePhoton_FlatPt-5To300/AODSIM/FlatPU0to70RAW_106X_upgrade2018_realistic_v11_L1v1_ext1-v2/00000/6F7BDF5D-2A6A-7342-993F-E8DBABF920C8.root'
-            'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/250000/26B3A9F9-290D-6346-8862-2BE71645C57D.root'
-#                options.inputFile
+   #         'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/250000/35BAE18A-E8EA-254E-B693-9212D3725212.root'
+     #       'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/250000/26B3A9F9-290D-6346-8862-2BE71645C57D.root'
+                options.inputFiles
                 )
                             )
 
