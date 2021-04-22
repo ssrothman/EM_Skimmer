@@ -30,7 +30,7 @@ config.JobType.pluginName = 'Analysis'
 config.JobType.outputFiles= [
 #    'nTupleMC.root'
  #   'nTupleMC_Pt20to40.root'
-    'nTupleMC_Pt20toInf.root'
+    'nTupleMC.root'
 #    'nTupleMC_Pt40toInf.root'
 ]
 
