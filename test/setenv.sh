@@ -1,0 +1,1 @@
+export PYTHONPATH=$PYTHONPATH:$CMSSW_BASE/src/EM_Skimmer/utils
