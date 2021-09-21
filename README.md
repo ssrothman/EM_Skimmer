@@ -9,28 +9,28 @@ scram b -j4
 
 
 ## Test Run
-'''
+```bash
 cd test
 cmsRun Photon_RecHit_AOD_cfg.py
-'''
+```
 
 [Note max events set as 1000. Change to -1 before submitting the crab jobs]
 The datasets to run on editing the crab config are in Gamma_Jet_Dataset.txt
 
 To generate config file for CRAB job submission, create a file in test/configs (i.e. see example_config.yml). Then run the following lines
 
-```
+```bash
 source setpath.sh
 ./make_crab_cfg.py -c <path-to-config-file> -t <production_tag>
 ```
 
 The script will produce python configuration files to submit CRAB jobs. Run
-```
+```bash
 source SubmitCRAB.sh
 ```
 
 to submit all the CRAB jobs at once. If needed, adjust the number of files per unit and number of units per job as per the recommendations using the dryrun option.
 
-```
+```bash
 crab submit -c <crab-cfg-file> --dryrun
 ```
