@@ -1,3 +1,6 @@
+To get started, run the following lines on lxplus:
+
+```bash
 cmsrel CMSSW_10_6_8
 cd CMSSW_10_6_8/src/
 cmsenv
@@ -5,8 +8,8 @@ mkdir EM_GNN_ID
 cd EM_GNN_ID
 git clone git@github.com:UMN-CMS/EM_Skimmer.git
 cd EM_Skimmer
-scram b -j4
-
+scram b -j8
+```
 
 ## Test Run
 ```bash
