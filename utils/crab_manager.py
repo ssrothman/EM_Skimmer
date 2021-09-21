@@ -41,7 +41,7 @@ class crab_job_manager():
         self.config_file = file_
         self.config = ordered_load(open(file_), Loader=yaml.SafeLoader)
 
-        self.config['RequestName'] = self.production_tag
+        self.config['RequestName'] = ''
         self.config['WorkArea'] = 'crab_projects/{}'.format(self.production_tag)
 
         if not self.check_config():
@@ -60,6 +60,7 @@ class crab_job_manager():
         for dataset in self.config['InputDataset']:
             
             dataset_tag = dataset.replace('/', '_')
+            self.config['RequestName'] = dataset_tag[1:]
             pyscript_name = 'CRAB_{}{}.py'.format(self.production_tag, dataset_tag)
 
             with open('crab_template.txt', 'read') as tmp:
@@ -77,7 +78,7 @@ class crab_job_manager():
                                 if '<{}>'.format(key_) in line:
                                     # If the key is InputDataset, use only one dataset at a time
                                     if 'InputDataset' in key_:
-                                        newline = 'InputDatset: {}'.format(dataset)
+                                        newline = 'config.Data.inputDataset\t= "{}"'.format(dataset)
                                     # Check for the type of the parameter
                                     # If the parameter is a string replace it with a string
                                     # Else if it's a float or an integer or a list, convert to a string

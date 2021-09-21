@@ -1,6 +1,6 @@
-# -------------------------------------
+# -----------------------------------------
 # Template file for CRAB job submission
-# -------------------------------------
+# -----------------------------------------
 
 try:
   from CRABClient.UserUtilities import config
@@ -9,19 +9,6 @@ except ImportError:
   print 'ERROR: Could not load CRABClient.UserUtilities.  Please source the crab3 setup:'
   print 'source /cvmfs/cms.cern.ch/crab3/crab.sh'
   exit(-1)
-
-from CRABAPI.RawCommand import crabCommand
-from httplib import HTTPException
-#import FWCore.ParameterSet.Config as cms
-def crabSubmit(config):
-    try:
-        crabCommand('submit', config = config)
-    except HTTPException, hte:
-      print '-----> there was a problem. see below.'
-      print hte.headers
-      print 'quit here'
-      exit(-1)
-    exit(0)
 
 config = config()
 
@@ -53,5 +40,3 @@ config.Site.storageSite   = <StorageSite>
 config.Site.Whitelist     = <Whitelist>
 config.Site.Blacklist     = <Blacklist>
 config.Site.ignoreGlobalBlacklist = False
-
-crabSubmit(config)
