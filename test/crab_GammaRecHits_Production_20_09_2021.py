@@ -1,5 +1,5 @@
 # -------------------------------------
-# CRAB Job: Created on 2021/9/21 15:26:57 UTC
+# CRAB Job: Created on 2021/9/21 15:53:11 UTC
 # -------------------------------------
 
 try:
@@ -37,7 +37,7 @@ config.JobType.outputFiles= 'GammaRecHits_ntuple.root'
 config.JobType.psetName = 'test/Photon_RecHit_AOD_cfg.py'
 
 config.JobType.allowUndistributedCMSSW = True
-config.JobType.maxJobRuntimeMin = <MaxJobRuntime>
+config.JobType.maxJobRuntimeMin = 2750
 #config.JobType.sendPythonFolder = True
 
 config.Data.inputDataset  = '/GJet_Pt-20toInf_DoubleEMEnriched_MGG-40to80_TuneCP5_13TeV_Pythia8/RunIISummer19UL18RECO-106X_upgrade2018_realistic_v11_L1v1-v2/AODSIM'

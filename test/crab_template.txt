@@ -37,7 +37,7 @@ config.JobType.outputFiles= <OutputFile>
 config.JobType.psetName = <PsetName>
 
 config.JobType.allowUndistributedCMSSW = True
-config.JobType.maxJobRuntimeMin = <MaxJobRuntime>
+config.JobType.maxJobRuntimeMin = <MaxJobRunTime>
 #config.JobType.sendPythonFolder = True
 
 config.Data.inputDataset  = <InputDataset>

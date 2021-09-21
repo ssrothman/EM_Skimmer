@@ -66,7 +66,6 @@ class crab_job_manager():
                     for key_ in self.parameter_list:
                         par_ = self.config[key_]
                         if '<{}>'.format(key_) in line:
-                            print(key_, par_)
                             # Check for the type of the parameter
                             # If the parameter is a string replace it with a string
                             # Else if it's a float or an integer or a list, convert to a string
