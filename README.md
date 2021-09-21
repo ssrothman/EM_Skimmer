@@ -1,3 +1,4 @@
+## Setup
 To get started, run the following lines on lxplus:
 
 ```bash
@@ -18,6 +19,8 @@ cmsRun Photon_RecHit_AOD_cfg.py
 ```
 
 Note: Max events are set to 1000. Change to -1 before submitting the crab jobs. The datasets to run on editing the crab config are in Gamma_Jet_Dataset.txt
+
+## CRAB
 To generate config file for CRAB job submission, create a file in test/configs (i.e. see example_config.yml). Then run the following lines
 
 ```bash
