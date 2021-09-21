@@ -1,1 +1,1 @@
-export PYTHONPATH=$PYTHONPATH:$CMSSW_BASE/src/EM_Skimmer/utils
+export PYTHONPATH=$PYTHONPATH:$CMSSW_BASE/src/EM_GNN_ID/EM_Skimmer/utils
