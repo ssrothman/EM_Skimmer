@@ -1,3 +1,4 @@
+
 // -*- C++ -*-
 //
 // Package:    Electron_GNN_Regression/Photon_RefinedRecHit_NTuplizer
@@ -44,6 +45,9 @@
 #include "Geometry/CaloEventSetup/interface/CaloTopologyRecord.h"
 #include "Geometry/CaloTopology/interface/CaloTopology.h"
 
+#include "CondFormats/EcalObjects/interface/EcalPedestals.h"
+#include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
+
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "DataFormats/PatCandidates/interface/Photon.h"
 
@@ -82,7 +86,7 @@
 // This will improve performance in multithreaded jobs.
 
 
-using reco::TrackCollection;
+//using reco::TrackCollection;
 
 class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
    public:
@@ -108,6 +112,7 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
 //   cluster tools
       EcalClusterLazyTools *clustertools;
       noZS::EcalClusterLazyTools *clustertools_NoZS;
+      edm::ESHandle<EcalPedestals> _ped;
 
 //   Identify if the SC lies in EB OR EE based on its seed
      bool isEB = 0;
@@ -141,6 +146,9 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
 
      std::vector<float> RecHitFrac[2];
      std::vector<float> RecHitEn[2];
+     std::vector<int>   RecHitGain[2];
+     std::vector<bool>  RecHitQuality[2];
+     std::vector<float> HitNoise[2];
 
      std::vector<float> Pho_pt_;
      std::vector<float> Pho_eta_;
@@ -258,6 +266,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 
    ESHandle<CaloGeometry> pG;
    iSetup.get<CaloGeometryRecord>().get(pG);
+   iSetup.get<EcalPedestalsRcd>().get(_ped);
    const CaloGeometry* geo = pG.product();
    const CaloSubdetectorGeometry* ecalEBGeom = static_cast<const CaloSubdetectorGeometry*>(geo->getSubdetectorGeometry(DetId::Ecal, EcalBarrel));
    const CaloSubdetectorGeometry* ecalEEGeom = static_cast<const CaloSubdetectorGeometry*>(geo->getSubdetectorGeometry(DetId::Ecal, EcalEndcap));
@@ -318,6 +327,15 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 	
 		RecHitEn[nPhotons_].push_back(oneHit->energy());
 		RecHitFrac[nPhotons_].push_back(detitr.second);
+		if(oneHit->checkFlag(EcalRecHit::kGood))	RecHitQuality[nPhotons_].push_back(1);
+		else RecHitQuality[nPhotons_].push_back(0);
+
+		cout<<endl<<" Reco Flags = "<<oneHit->recoFlag()<<endl;
+
+		if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) 		RecHitGain[nPhotons_].push_back(6);
+		else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1))            RecHitGain[nPhotons_].push_back(1);
+		else RecHitGain[nPhotons_].push_back(12);
+		HitNoise[nPhotons_].push_back(_ped->find(detitr.first)->rms(1));
 	}  
 
 	if(isEE){
@@ -357,10 +375,10 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////// Gen Stuff hardcoded for isHardProcess photons for now /////////////////////////////////////
+//////////////////////// Gen Stuff hardcaded for status 1 photons for now /////////////////////////////////////
 
   for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
-        if( part->isHardProcess()  && abs(part->pdgId())==22 ){
+        if( part->status()==1  && abs(part->pdgId())==22 ){
                 Pho_Gen_Pt.push_back(part->pt());
                 Pho_Gen_Eta.push_back(part->eta());
                 Pho_Gen_Phi.push_back(part->phi());
@@ -410,6 +428,10 @@ Photon_RefinedRecHit_NTuplizer::beginJob()
 	T->Branch("Hit_Z_Pho1"  ,  &(Hit_Z[0]));
         T->Branch("RecHitEnPho1"  ,  &(RecHitEn[0]));
 	T->Branch("RecHitFracPho1"  ,  &(RecHitFrac[0]));
+	T->Branch("RecHitGain1"  ,  &(RecHitGain[0]));
+	T->Branch("RecHitQuality1", &(RecHitQuality[0]));
+	T->Branch("HitNoisePho1", &(HitNoise[0]));
+
 	T->Branch("iEtaPho2"  ,  &(iEta[1]));
         T->Branch("iPhiPho2"  ,  &(iPhi[1]));
 	T->Branch("Hit_ES_Eta_Pho2"  ,  &(Hit_ES_Eta[1]));
@@ -426,6 +448,10 @@ Photon_RefinedRecHit_NTuplizer::beginJob()
         T->Branch("Hit_Z_Pho2"  ,  &(Hit_Z[1]));
         T->Branch("RecHitEnPho2"  ,  &(RecHitEn[1]));
         T->Branch("RecHitFracPho2"  ,  &(RecHitFrac[1]));
+	T->Branch("RecHitGain2"  ,  &(RecHitGain[1]));
+	T->Branch("RecHitQuality2", &(RecHitQuality[1]));
+	T->Branch("HitNoisePho2", &(HitNoise[1]));
+
 
         T->Branch("nPhotons",  &nPhotons_ , "nPho/I");
         T->Branch("pt"  ,  &Pho_pt_);
@@ -551,6 +577,9 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
 	Hit_Z[0].clear();
 	RecHitEn[0].clear();
 	RecHitFrac[0].clear();
+	RecHitGain[0].clear();
+	RecHitQuality[0].clear();
+	HitNoise[0].clear();
 	iEta[1].clear();
         iPhi[1].clear();
 
@@ -568,6 +597,9 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
         Hit_Z[1].clear();
         RecHitEn[1].clear();
         RecHitFrac[1].clear();
+	RecHitGain[1].clear();
+	RecHitQuality[1].clear();
+	HitNoise[1].clear();
 	Pho_pt_.clear();
 	Pho_eta_.clear();
 	Pho_phi_.clear();
