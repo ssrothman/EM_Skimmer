@@ -60,7 +60,7 @@ class crab_job_manager():
         for dataset in self.config['InputDataset']:
             
             dataset_tag = dataset.replace('/', '_')
-            self.config['RequestName'] = dataset_tag[1:]
+            self.config['RequestName'] = dataset_tag[1:99]
             pyscript_name = 'CRAB_{}{}.py'.format(self.production_tag, dataset_tag)
 
             with open('crab_template.txt', 'read') as tmp:
