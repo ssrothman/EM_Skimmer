@@ -1,5 +1,6 @@
 *.pyc
 *.log
+*.root
 CRAB_*py
 SubmitCRAB.sh
 crab_projects/
