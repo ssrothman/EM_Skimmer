@@ -50,7 +50,7 @@ my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.mvaElectronID
 
 
 for idmod in my_id_modules:
-        setupAllVIDIdsInModule(process, idmod, setupVIDPhotonSelection)
+        setupAllVIDIdsInModule(process, idmod, setupVIDElectronSelection)
 
 process.nTuplelize = cms.EDAnalyzer('Electron_RefinedRecHit_NTuplizer',
         rhoFastJet = cms.InputTag("fixedGridRhoAll"),

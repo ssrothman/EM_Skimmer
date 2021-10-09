@@ -224,7 +224,7 @@ Electron_RefinedRecHit_NTuplizer::Electron_RefinedRecHit_NTuplizer(const edm::Pa
    eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
 {
    //now do what ever initialization is needed
-   electronsToken_ = mayConsume<edm::View<reco::Photon> >(iConfig.getParameter<edm::InputTag>("electrons"));
+   electronsToken_ = mayConsume<edm::View<reco::GsfElectron> >(iConfig.getParameter<edm::InputTag>("electrons"));
    genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("genParticles"));
    usesResource("TFileService");
 }
@@ -498,7 +498,7 @@ Electron_RefinedRecHit_NTuplizer::endJob()
 
 /*
 //Evaluate if the gen particle dR matched to a reco electron is also a electron
-bool Electron_RefinedRecHit_NTuplizer::GetGenMatchType(const reco::Photon& Photon, const reco::GenParticle& GenColl, int pdgId, double dRThresh){
+bool Electron_RefinedRecHit_NTuplizer::GetGenMatchType(const reco::GsfElectron& Electron, const reco::GenParticle& GenColl, int pdgId, double dRThresh){
 	
 
 }
