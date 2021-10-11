@@ -372,112 +372,104 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
    const EcalRecHitCollection *recHitsEB = clustertools_NoZS->getEcalEBRecHitCollection();
    const EcalRecHitCollection *recHitsEE = clustertools_NoZS->getEcalEERecHitCollection();
    for (size_t i = 0; i < photons->size(); ++i){
-      if (nPhotons_ == 2) break;
-      const auto pho = photons->ptrAt(i);
-      if( pho->pt() < 10 ) continue;
-      const SuperClusterRef& sc = pho->superCluster();
-      std::vector< std::pair<DetId, float> > hitsAndFractions = sc->hitsAndFractions();
-      isEB = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalBarrel);
-      isEE = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalEndcap);
-      EBDetId* DidEB;
-      EEDetId* DidEE;
-      
-      EcalRecHitCollection::const_iterator oneHit;
+	if (nPhotons_ == 2) break;
+	const auto pho = photons->ptrAt(i);
+        if( pho->pt() < 10 ) continue;
+	const SuperClusterRef& sc = pho->superCluster();
+	std::vector< std::pair<DetId, float> > hitsAndFractions = sc->hitsAndFractions();
+	isEB = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalBarrel);
+	isEE = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalEndcap);
+	EBDetId* DidEB;
+	EEDetId* DidEE;
+	EcalRecHitCollection::const_iterator oneHit;
+        for (const auto&  detitr : hitsAndFractions) {
+		if(isEB){
+			DidEB = new EBDetId(detitr.first.rawId());
+			DetId Did   = detitr.first.rawId();
+                        shared_ptr<const CaloCellGeometry> geom = ecalEBGeom->getGeometry(Did);
+			oneHit = recHitsEB->find( (detitr.first) ) ;
+			iEta[nPhotons_].push_back(DidEB->ieta());
+			iPhi[nPhotons_].push_back(DidEB->iphi());
+			Hit_Eta[nPhotons_].push_back(geom->etaPos());
+			Hit_Phi[nPhotons_].push_back(geom->phiPos());
+			Hit_X[nPhotons_].push_back(geom->getPosition().x());
+			Hit_Y[nPhotons_].push_back(geom->getPosition().y());
+			Hit_Z[nPhotons_].push_back(geom->getPosition().z());
+		}
+		else if(isEE){
+			DidEE = new EEDetId(detitr.first.rawId());
+			DetId Did   = detitr.first.rawId();
+			shared_ptr<const CaloCellGeometry> geom = ecalEEGeom->getGeometry(Did);
+                        oneHit = recHitsEE->find( (detitr.first) ) ;
+                        iEta[nPhotons_].push_back(DidEE->ix());
+                        iPhi[nPhotons_].push_back(DidEE->iy());
+			Hit_Eta[nPhotons_].push_back(geom->etaPos());
+                        Hit_Phi[nPhotons_].push_back(geom->phiPos());
+                        Hit_X[nPhotons_].push_back(geom->getPosition().x());
+                        Hit_Y[nPhotons_].push_back(geom->getPosition().y());
+                        Hit_Z[nPhotons_].push_back(geom->getPosition().z());
+		}
+	
+		RecHitEn[nPhotons_].push_back(oneHit->energy());
+		RecHitFrac[nPhotons_].push_back(detitr.second);
+		if(oneHit->checkFlag(EcalRecHit::kGood))	RecHitQuality[nPhotons_].push_back(1);
+		else RecHitQuality[nPhotons_].push_back(0);
 
-      for (const auto&  detitr : hitsAndFractions) {
-         if(isEB){
-            DidEB = new EBDetId(detitr.first.rawId());
-            DetId Did   = detitr.first.rawId();
-            shared_ptr<const CaloCellGeometry> geom = ecalEBGeom->getGeometry(Did);
-            oneHit = recHitsEB->find( (detitr.first) ) ;
-            iEta[nPhotons_].push_back(DidEB->ieta());
-            iPhi[nPhotons_].push_back(DidEB->iphi());
-            Hit_Eta[nPhotons_].push_back(geom->etaPos());
-            Hit_Phi[nPhotons_].push_back(geom->phiPos());
-            Hit_X[nPhotons_].push_back(geom->getPosition().x());
-            Hit_Y[nPhotons_].push_back(geom->getPosition().y());
-            Hit_Z[nPhotons_].push_back(geom->getPosition().z());
-         }
-         else if(isEE){
-            DidEE = new EEDetId(detitr.first.rawId());
-            DetId Did   = detitr.first.rawId();
-            shared_ptr<const CaloCellGeometry> geom = ecalEEGeom->getGeometry(Did);
-            oneHit = recHitsEE->find( (detitr.first) ) ;
-            iEta[nPhotons_].push_back(DidEE->ix());
-            iPhi[nPhotons_].push_back(DidEE->iy());
-            Hit_Eta[nPhotons_].push_back(geom->etaPos());
-            Hit_Phi[nPhotons_].push_back(geom->phiPos());
-            Hit_X[nPhotons_].push_back(geom->getPosition().x());
-            Hit_Y[nPhotons_].push_back(geom->getPosition().y());
-            Hit_Z[nPhotons_].push_back(geom->getPosition().z());
-         }
+		cout<<endl<<" Reco Flags = "<<oneHit->recoFlag()<<endl;
 
-         RecHitEn[nPhotons_].push_back(oneHit->energy());
-         RecHitFrac[nPhotons_].push_back(detitr.second);
-         if(oneHit->checkFlag(EcalRecHit::kGood))	RecHitQuality[nPhotons_].push_back(1);
-         else RecHitQuality[nPhotons_].push_back(0);
+		if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) 		RecHitGain[nPhotons_].push_back(6);
+		else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1))            RecHitGain[nPhotons_].push_back(1);
+		else RecHitGain[nPhotons_].push_back(12);
+		HitNoise[nPhotons_].push_back(_ped->find(detitr.first)->rms(1));
+	}  
 
+	if(isEE){
+		GetESPlaneRecHits(*sc, geo, nPhotons_, 1);     
+ 		GetESPlaneRecHits(*sc, geo, nPhotons_, 2);
+	}
 
-         for (int iflag=EcalRecHit::kGood; iflag<EcalRecHit::kHasSwitchToGain1+1; iflag++){
-            bool check_bit = oneHit->checkFlag(iflag);
-            RecHitFlag_container[iflag][nPhotons_].push_back(check_bit);
-         }
+        nPhotons_++;
+        Pho_pt_.push_back( pho->pt() );
+        Pho_eta_.push_back( pho->superCluster()->eta() );
+        Pho_phi_.push_back( pho->superCluster()->phi() );
+        Pho_energy_.push_back( pho->energy() );
+	Pho_ecal_mustache_energy_.push_back( sc->energy() );
+        Pho_R9.push_back(pho->full5x5_r9());
+        Pho_SigIEIE.push_back(pho->full5x5_sigmaIetaIeta());
+        Pho_SigIPhiIPhi.push_back(pho->full5x5_showerShapeVariables().sigmaIphiIphi);
+        Pho_SCEtaW.push_back(pho->superCluster()->etaWidth());
+        Pho_SCPhiW.push_back(pho->superCluster()->phiWidth());
+	Pho_HadOverEm.push_back(pho->hadronicOverEm());
+        const CaloClusterPtr seed_clu = pho->superCluster()->seed();
+//        if (!seed_clu) continue;
+//        Pho_CovIEtaIEta.push_back(clustertools_NoZS->localCovariances(*seed_clu)[0]);
+//        Pho_CovIEtaIPhi.push_back(clustertools_NoZS->localCovariances(*seed_clu)[1]);
+//	Pho_ESSigRR.push_back(clustertools->eseffsirir( *(pho->superCluster()) ) );
+	Pho_SCRawE.push_back(pho->superCluster()->rawEnergy());
+        Pho_SC_ESEnByRawE.push_back( (pho->superCluster()->preshowerEnergy())/(pho->superCluster()->rawEnergy()) );
+//        Pho_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
 
-         if (DEBUG) cout<<endl<<" Reco Flags = "<<oneHit->recoFlag()<<endl;
-
-         if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) 		RecHitGain[nPhotons_].push_back(6);
-         else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1))            RecHitGain[nPhotons_].push_back(1);
-         else RecHitGain[nPhotons_].push_back(12);
-         HitNoise[nPhotons_].push_back(_ped->find(detitr.first)->rms(1));
-      }  
-
-      if(isEE){
-         GetESPlaneRecHits(*sc, geo, nPhotons_, 1);     
-         GetESPlaneRecHits(*sc, geo, nPhotons_, 2);
-      }
-
-      nPhotons_++;
-      Pho_pt_.push_back( pho->pt() );
-      Pho_eta_.push_back( pho->superCluster()->eta() );
-      Pho_phi_.push_back( pho->superCluster()->phi() );
-      Pho_energy_.push_back( pho->energy() );
-      Pho_ecal_mustache_energy_.push_back( sc->energy() );
-      Pho_R9.push_back(pho->full5x5_r9());
-      Pho_SigIEIE.push_back(pho->full5x5_sigmaIetaIeta());
-      Pho_SigIPhiIPhi.push_back(pho->full5x5_showerShapeVariables().sigmaIphiIphi);
-      Pho_SCEtaW.push_back(pho->superCluster()->etaWidth());
-      Pho_SCPhiW.push_back(pho->superCluster()->phiWidth());
-      Pho_HadOverEm.push_back(pho->hadronicOverEm());
-      const CaloClusterPtr seed_clu = pho->superCluster()->seed();
-      //        if (!seed_clu) continue;
-      //        Pho_CovIEtaIEta.push_back(clustertools_NoZS->localCovariances(*seed_clu)[0]);
-      //        Pho_CovIEtaIPhi.push_back(clustertools_NoZS->localCovariances(*seed_clu)[1]);
-      //	Pho_ESSigRR.push_back(clustertools->eseffsirir( *(pho->superCluster()) ) );
-      Pho_SCRawE.push_back(pho->superCluster()->rawEnergy());
-      Pho_SC_ESEnByRawE.push_back( (pho->superCluster()->preshowerEnergy())/(pho->superCluster()->rawEnergy()) );
-      //        Pho_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
-
-      ////// Look up and save the ID decisions
-      //        bool isPassMedium = (*medium_id_decisions)[pho];
-      //        bool isPassTight  = (*tight_id_decisions)[pho];
-      //        passMediumId_.push_back( (int) isPassMedium);
-      //        passTightId_.push_back ( (int) isPassTight );
+////// Look up and save the ID decisions
+//        bool isPassMedium = (*medium_id_decisions)[pho];
+//        bool isPassTight  = (*tight_id_decisions)[pho];
+//        passMediumId_.push_back( (int) isPassMedium);
+//        passTightId_.push_back ( (int) isPassTight );
 
    }
 
    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-   //////////////////////// Gen Stuff hardcaded for status 1 photons for now /////////////////////////////////////
+//////////////////////// Gen Stuff hardcaded for status 1 photons for now /////////////////////////////////////
 
-   for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
-      if( part->status()==1  && abs(part->pdgId())==22 ){
-         Pho_Gen_Pt.push_back(part->pt());
-         Pho_Gen_Eta.push_back(part->eta());
-         Pho_Gen_Phi.push_back(part->phi());
-         Pho_Gen_E.push_back(part->energy());
-      }
-   }
+  for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
+        if( part->status()==1  && abs(part->pdgId())==22 ){
+                Pho_Gen_Pt.push_back(part->pt());
+                Pho_Gen_Eta.push_back(part->eta());
+                Pho_Gen_Phi.push_back(part->phi());
+                Pho_Gen_E.push_back(part->energy());
+        }
+  }
 
    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
