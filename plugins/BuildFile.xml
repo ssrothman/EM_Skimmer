@@ -28,3 +28,13 @@
 <use name="Geometry/HcalCommonData"/>
 <use name="Calibration/Tools"/>
 <flags EDM_PLUGIN="1"/>
+<library name="Photon_RefinedRecHit_NTuplizerPlugin" file="*.cc">
+
+   <use name="root"/>
+   <use name="rootminuit"/>
+   <use name="clhep"/>
+   <use name="rootrflx"/>
+   <use name="rootmath"/>
+   <use name="boost"/>
+   <Flags EDM_PLUGIN="1"/>
+</library>

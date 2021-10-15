@@ -1,0 +1,42 @@
+# -----------------------------------------
+# Template file for CRAB job submission
+# -----------------------------------------
+
+try:
+  from CRABClient.UserUtilities import config
+except ImportError:
+  print
+  print 'ERROR: Could not load CRABClient.UserUtilities.  Please source the crab3 setup:'
+  print 'source /cvmfs/cms.cern.ch/crab3/crab.sh'
+  exit(-1)
+
+config = config()
+
+config.General.requestName = <RequestName>
+config.General.workArea = <WorkArea>
+config.General.transferOutputs = <TransferOutputs>
+config.General.transferLogs = <TransferLogs>
+
+config.JobType.pluginName = 'Analysis'
+
+config.JobType.outputFiles= <OutputFile>
+
+config.JobType.psetName = <PsetName>
+
+config.JobType.allowUndistributedCMSSW = True
+config.JobType.maxJobRuntimeMin = <MaxJobRunTime>
+#config.JobType.sendPythonFolder = True
+
+config.Data.inputDataset  = <InputDataset>
+
+config.Data.inputDBS      = <InputDBS>
+config.Data.splitting     = <Splitting> #'LumiBased' / 'FileBased'
+config.Data.unitsPerJob   = <UnitsPerJob> #30000
+config.Data.outLFNDirBase = <FilePath>
+config.Data.publication   = False
+
+# GRID
+config.Site.storageSite   = <StorageSite>
+config.Site.Whitelist     = <Whitelist>
+config.Site.Blacklist     = <Blacklist>
+config.Site.ignoreGlobalBlacklist = False
