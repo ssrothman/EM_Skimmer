@@ -85,9 +85,11 @@ Implementation:
 // from  edm::one::EDAnalyzer<>
 // This will improve performance in multithreaded jobs.
 
+using namespace edm;
+using namespace std;
+using namespace reco;
 
 //using reco::TrackCollection;
-using namespace std;
 
 class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
    public:
@@ -123,7 +125,7 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       bool isEE = 0; // !isEB not sufficient since later will try to include the preshower as well
 
 
-      //     bool GetGenMatchType(const reco::Eleton& Eleton, const reco::GenParticle& GenColl, int pdgId, double dRThresh);
+      //     bool GetGenMatchType(const reco::Eleton& Electron, const reco::GenParticle& GenColl, int pdgId, double dRThresh);
       // Get the hits from the ES
       //     std::vector<GlobalPoint> GetESPlaneRecHits(const reco::SuperCluster& sc, unsigned int planeIndex) const;
       void GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int elenum, unsigned int planeIndex);
@@ -577,6 +579,12 @@ Electron_RefinedRecHit_NTuplizer::beginJob()
    T->Branch("RecHitQuality2", &(RecHitQuality[1]));
    T->Branch("HitNoiseEle2", &(HitNoise[1]));
 
+   T->Branch("RecHitFlag_kGood_ele2", &(RecHitFlag_kGood[1]));
+   T->Branch("RecHitFlag_kPoorReco_ele2", &(RecHitFlag_kPoorReco[1]));
+   T->Branch("RecHitFlag_kOutOfTime_ele2", &(RecHitFlag_kOutOfTime[1]));
+   T->Branch("RecHitFlag_kFaultyHardware_ele2", &(RecHitFlag_kFaultyHardware[1]));
+   T->Branch("RecHitFlag_kNoisy_ele2", &(RecHitFlag_kNoisy[1]));
+   T->Branch("RecHitFlag_kPoorCalib_ele2", &(RecHitFlag_kPoorCalib[1]));
    T->Branch("RecHitFlag_kSaturated_ele2", &(RecHitFlag_kSaturated[1]));
    T->Branch("RecHitFlag_kLeadingEdgeRecovered_ele2", &(RecHitFlag_kLeadingEdgeRecovered[1]));
    T->Branch("RecHitFlag_kNeighboursRecovered_ele2", &(RecHitFlag_kNeighboursRecovered[1]));

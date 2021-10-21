@@ -28,7 +28,7 @@ options.parseArguments()
 process.source = cms.Source("PoolSource",
                                 # replace 'myfile.root' with the source file you want to use
                                 fileNames = cms.untracked.vstring(
-                                    'file:6F7BDF5D-2A6A-7342-993F-E8DBABF920C8.root'
+            'root://cms-xrd-global.cern.ch//store/mc/RunIISummer19UL18RECO/DoubleElectron_FlatPt-1To300/AODSIM/FlatPU0to70RAW_106X_upgrade2018_realistic_v11_L1v1_ext2-v2/40000/FF912577-7001-DE41-BDB0-6FF06EC01DA6.root'
            #'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/DoublePhoton_FlatPt-5To300/AODSIM/FlatPU0to70RAW_106X_upgrade2018_realistic_v11_L1v1_ext1-v2/00000/6F7BDF5D-2A6A-7342-993F-E8DBABF920C8.root'
    #         'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/250000/35BAE18A-E8EA-254E-B693-9212D3725212.root'
      #       'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/250000/26B3A9F9-290D-6346-8862-2BE71645C57D.root'

@@ -375,7 +375,8 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       if (nPhotons_ == 2) break;
       const auto pho = photons->ptrAt(i);
       if( pho->pt() < 10 ) continue;
-      const SuperClusterRef& sc = pho->superCluster();
+      //const SuperClusterRef& sc = pho->superCluster(); 
+      const SuperClusterRef& sc = pho->parentSuperCluster(); // mustache cluster
       std::vector< std::pair<DetId, float> > hitsAndFractions = sc->hitsAndFractions();
       isEB = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalBarrel);
       isEE = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalEndcap);
@@ -434,23 +435,23 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 
       nPhotons_++;
       Pho_pt_.push_back( pho->pt() );
-      Pho_eta_.push_back( pho->superCluster()->eta() );
-      Pho_phi_.push_back( pho->superCluster()->phi() );
+      Pho_eta_.push_back( sc->eta() );
+      Pho_phi_.push_back( sc->phi() );
       Pho_energy_.push_back( pho->energy() );
       Pho_ecal_mustache_energy_.push_back( sc->energy() );
       Pho_R9.push_back(pho->full5x5_r9());
       Pho_SigIEIE.push_back(pho->full5x5_sigmaIetaIeta());
       Pho_SigIPhiIPhi.push_back(pho->full5x5_showerShapeVariables().sigmaIphiIphi);
-      Pho_SCEtaW.push_back(pho->superCluster()->etaWidth());
-      Pho_SCPhiW.push_back(pho->superCluster()->phiWidth());
+      Pho_SCEtaW.push_back(sc->etaWidth());
+      Pho_SCPhiW.push_back(sc->phiWidth());
       Pho_HadOverEm.push_back(pho->hadronicOverEm());
-      const CaloClusterPtr seed_clu = pho->superCluster()->seed();
+      const CaloClusterPtr seed_clu = sc->seed();
       //        if (!seed_clu) continue;
       //        Pho_CovIEtaIEta.push_back(clustertools_NoZS->localCovariances(*seed_clu)[0]);
       //        Pho_CovIEtaIPhi.push_back(clustertools_NoZS->localCovariances(*seed_clu)[1]);
-      //	Pho_ESSigRR.push_back(clustertools->eseffsirir( *(pho->superCluster()) ) );
-      Pho_SCRawE.push_back(pho->superCluster()->rawEnergy());
-      Pho_SC_ESEnByRawE.push_back( (pho->superCluster()->preshowerEnergy())/(pho->superCluster()->rawEnergy()) );
+      //	Pho_ESSigRR.push_back(clustertools->eseffsirir( *(sc) ) );
+      Pho_SCRawE.push_back(sc->rawEnergy());
+      Pho_SC_ESEnByRawE.push_back( (sc->preshowerEnergy())/(sc->rawEnergy()) );
       //        Pho_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
 
       ////// Look up and save the ID decisions
