@@ -54,7 +54,7 @@ for idmod in my_id_modules:
         setupAllVIDIdsInModule(process, idmod, setupVIDElectronSelection)
 
 process.nTuplelize = cms.EDAnalyzer('Electron_RefinedRecHit_NTuplizer',
-        rhoFastJet = cms.InputTag("fixedGridRhoFastjetAll"),
+        rhoFastJet = cms.InputTag("fixedGridRhoAll"),
         electrons = cms.InputTag("gedGsfElectrons"),
         genParticles = cms.InputTag("genParticles"),
         #MVA Based Id
