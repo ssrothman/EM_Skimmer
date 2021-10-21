@@ -375,8 +375,8 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       if (nPhotons_ == 2) break;
       const auto pho = photons->ptrAt(i);
       if( pho->pt() < 10 ) continue;
-      //const SuperClusterRef& sc = pho->superCluster(); 
-      const SuperClusterRef& sc = pho->parentSuperCluster(); // mustache cluster
+      const SuperClusterRef& sc = pho->superCluster(); 
+      //const SuperClusterRef& sc = pho->parentSuperCluster(); // mustache cluster
       std::vector< std::pair<DetId, float> > hitsAndFractions = sc->hitsAndFractions();
       isEB = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalBarrel);
       isEE = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalEndcap);
