@@ -19,17 +19,19 @@ class crab_job_manager():
 
         self.config_file = file_
         self.config = None
+        self.mc = False
         self.valid_config = False
         self.production_tag = ''
-        self.parameter_list = ['InputDataset', 'OutputFile','RequestName','WorkArea',\
-                 'TransferOutputs','TransferLogs','PsetName','MaxJobRunTime',\
-                 'InputDBS','Splitting','UnitsPerJob','FilePath','StorageSite',\
-                 'UseWhitelist', 'UseBlacklist',\
-                 'Whitelist','Blacklist', 'IgnoreGlobalBlacklist']
+        self.parameter_list = ['InputDataset', 'OutputFile', 'JSON', 'GlobalTag',\
+                 'RequestName','WorkArea', 'TransferOutputs','TransferLogs',\
+                 'PsetName','MaxJobRunTime','InputDBS','Splitting',\
+                 'UnitsPerJob','FilePath','StorageSite','UseWhitelist',\
+                 'UseBlacklist','Whitelist','Blacklist', 'IgnoreGlobalBlacklist']
 
     def check_config(self):
 
         for key_ in self.parameter_list:
+            if (key_=='GlobalTag' or key_=='JSON') and self.mc: continue
             if key_ not in self.config:
                 print 'Specify '+key_+' in the config file!'
                 return False
@@ -74,6 +76,7 @@ class crab_job_manager():
                             if 'Template file for CRAB job submission' in line:
                                 newline = '# CRAB Job: {}\n'.format(print_creation_timestamp())
                             for key_ in self.parameter_list:
+                                if not key_ in self.config: continue
                                 par_ = self.config[key_]
                                 if '<{}>'.format(key_) in line:
                                     # If the key is InputDataset, use only one dataset at a time
@@ -100,8 +103,9 @@ class crab_job_manager():
 
         return cfg_list
 
-    def setup_crab(self, file_, tag_):
+    def setup_crab(self, file_, tag_, mc_):
 
+        self.mc = mc_
         self.production_tag = tag_
         self.read_config_file(file_)
         _ = self.produce_crab_submission_script()

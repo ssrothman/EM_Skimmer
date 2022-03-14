@@ -1,305 +1,12 @@
-
-// -*- C++ -*-
-//
-// Package:    Electron_GNN_Regression/Electron_RefinedRecHit_NTuplizer
-// Class:      Electron_RefinedRecHit_NTuplizer
-//
-/**\class Electron_RefinedRecHit_NTuplizer Electron_RefinedRecHit_NTuplizer.cc Electron_GNN_Regression/Electron_RefinedRecHit_NTuplizer/plugins/Electron_RefinedRecHit_NTuplizer.cc
-
-Description: [one line class summary]
-
-Implementation:
-[Notes on implementation]
-*/
-//
-// Original Author:  Rajdeep Mohan Chatterjee
-//         Created:  Fri, 21 Feb 2020 11:38:58 GMT
-//
-//
-
-
-// system include files
-#include <memory>
-#include <iostream>
-#include "TTree.h"
-#include "Math/VectorUtil.h"
-#include "TFile.h"
-// user include files
-#include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/one/EDAnalyzer.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-
-#include "FWCore/ServiceRegistry/interface/Service.h"
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
-
-
-#include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
-#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
-#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
-#include "Geometry/CaloGeometry/interface/TruncatedPyramid.h"
-#include "Geometry/EcalAlgo/interface/EcalPreshowerGeometry.h"
-#include "Geometry/CaloTopology/interface/EcalPreshowerTopology.h"
-#include "Geometry/Records/interface/CaloGeometryRecord.h"
-#include "Geometry/CaloEventSetup/interface/CaloTopologyRecord.h"
-#include "Geometry/CaloTopology/interface/CaloTopology.h"
-
-#include "CondFormats/EcalObjects/interface/EcalPedestals.h"
-#include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
-
-#include "DataFormats/EgammaCandidates/interface/Electron.h"
-#include "DataFormats/PatCandidates/interface/Electron.h"
-
-#include "DataFormats/Candidate/interface/Candidate.h"
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-
-#include "DataFormats/Common/interface/ValueMap.h"
-#include "DataFormats/PatCandidates/interface/VIDCutFlowResult.h"
-
-#include "DataFormats/EgammaReco/interface/SuperCluster.h"
-
-#include "DataFormats/MuonReco/interface/Muon.h"
-#include "DataFormats/MuonReco/interface/MuonSelectors.h"
-#include "DataFormats/PatCandidates/interface/Muon.h"
-#include "DataFormats/VertexReco/interface/VertexFwd.h"
-#include "DataFormats/VertexReco/interface/Vertex.h"
-
-#include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
-#include "RecoEcal/EgammaCoreTools/interface/EcalClusterLazyTools.h"
-#include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
-
-#include "DataFormats/EcalDetId/interface/EcalSubdetector.h"
-#include "DataFormats/EcalDetId/interface/EBDetId.h"
-#include "DataFormats/EcalDetId/interface/EEDetId.h"
-#include "DataFormats/EcalDetId/interface/ESDetId.h"
-#include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
-#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
-//
-//
-// class declaration
-//
-
-// If the analyzer does not use TFileService, please remove
-// the template argument to the base class so the class inherits
-// from  edm::one::EDAnalyzer<>
-// This will improve performance in multithreaded jobs.
-
-
-//using reco::TrackCollection;
-using namespace std;
-
-class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
-   public:
-      explicit Electron_RefinedRecHit_NTuplizer(const edm::ParameterSet&);
-      ~Electron_RefinedRecHit_NTuplizer();
-
-      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
-      std::vector<float> Hit_ES_Eta[2];
-      std::vector<float> Hit_ES_Phi[2];
-      std::vector<float> Hit_ES_X[2];
-      std::vector<float> Hit_ES_Y[2];
-      std::vector<float> Hit_ES_Z[2];
-      std::vector<float> ES_RecHitEn[2];
-
-
-   private:
-      virtual void beginJob() override;
-      virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
-      virtual void endJob() override;
-
-
-      bool DEBUG = false;
-      
-
-      //   cluster tools
-      EcalClusterLazyTools *clustertools;
-      noZS::EcalClusterLazyTools *clustertools_NoZS;
-      edm::ESHandle<EcalPedestals> _ped;
-
-      //   Identify if the SC lies in EB OR EE based on its seed
-      bool isEB = 0;
-      bool isEE = 0; // !isEB not sufficient since later will try to include the preshower as well
-
-
-      //     bool GetGenMatchType(const reco::Eleton& Eleton, const reco::GenParticle& GenColl, int pdgId, double dRThresh);
-      // Get the hits from the ES
-      //     std::vector<GlobalPoint> GetESPlaneRecHits(const reco::SuperCluster& sc, unsigned int planeIndex) const;
-      void GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int elenum, unsigned int planeIndex);
-
-      //   clear the vectors 
-      void ClearTreeVectors();
-      // ----------member data ---------------------------
-      TTree* T;
-
-      // Variables for Run info.
-      int run;
-      int event;
-      int lumi;
-
-      // Electron variables
-      int nElectrons_;
-      Float_t rho;
-      std::vector<float> iEta[2];
-      std::vector<float> iPhi[2];
-      std::vector<float> Hit_Eta[2];
-      std::vector<float> Hit_Phi[2];
-      std::vector<float> Hit_X[2];
-      std::vector<float> Hit_Y[2];
-      std::vector<float> Hit_Z[2];
-
-
-      std::vector<float> RecHitFrac[2];
-      std::vector<float> RecHitEn[2];
-      std::vector<int>   RecHitGain[2];
-      std::vector<bool>  RecHitQuality[2];
-      std::vector<float> HitNoise[2];
-
-      // individual flags
-      std::vector<bool> RecHitFlag_kGood[2];                   // channel ok, the energy and time measurement are reliable
-      std::vector<bool> RecHitFlag_kPoorReco[2];                 // the energy is available from the UncalibRecHit, but approximate (bad shape, large chi2)
-      std::vector<bool> RecHitFlag_kOutOfTime[2];                // the energy is available from the UncalibRecHit (sync reco), but the event is out of time
-      std::vector<bool> RecHitFlag_kFaultyHardware[2];           // The energy is available from the UncalibRecHit, channel is faulty at some hardware level (e.g. noisy)
-      std::vector<bool> RecHitFlag_kNoisy[2];                    // the channel is very noisy
-      std::vector<bool> RecHitFlag_kPoorCalib[2];                // the energy is available from the UncalibRecHit, but the calibration of the channel is poor
-      std::vector<bool> RecHitFlag_kSaturated[2];                // saturated channel (recovery not tried)
-      std::vector<bool> RecHitFlag_kLeadingEdgeRecovered[2];     // saturated channel: energy estimated from the leading edge before saturation
-      std::vector<bool> RecHitFlag_kNeighboursRecovered[2];      // saturated/isolated dead: energy estimated from neighbours
-      std::vector<bool> RecHitFlag_kTowerRecovered[2];           // channel in TT with no data link, info retrieved from Trigger Primitive
-      std::vector<bool> RecHitFlag_kDead[2];                     // channel is dead and any recovery fails
-      std::vector<bool> RecHitFlag_kKilled[2];                   // MC only flag: the channel is killed in the real detector
-      std::vector<bool> RecHitFlag_kTPSaturated[2];              // the channel is in a region with saturated TP
-      std::vector<bool> RecHitFlag_kL1SpikeFlag[2];              // the channel is in a region with TP with sFGVB = 0
-      std::vector<bool> RecHitFlag_kWeird[2];                    // the signal is believed to originate from an anomalous deposit (spike) 
-      std::vector<bool> RecHitFlag_kDiWeird[2];                  // the signal is anomalous, and neighbors another anomalous signal  
-      std::vector<bool> RecHitFlag_kHasSwitchToGain6[2];         // at least one data frame is in G6
-      std::vector<bool> RecHitFlag_kHasSwitchToGain1[2];         // at least one data frame is in G1
-
-      // individual ES flags
-      std::vector<bool> RecHitFlag_kESGood[2];
-      std::vector<bool> RecHitFlag_kESDead[2];
-      std::vector<bool> RecHitFlag_kESHot[2];
-      std::vector<bool> RecHitFlag_kESPassBX[2];
-      std::vector<bool> RecHitFlag_kESTwoGoodRatios[2];
-      std::vector<bool> RecHitFlag_kESBadRatioFor12[2];
-      std::vector<bool> RecHitFlag_kESBadRatioFor23Upper[2];
-      std::vector<bool> RecHitFlag_kESBadRatioFor23Lower[2];
-      std::vector<bool> RecHitFlag_kESTS1Largest[2];
-      std::vector<bool> RecHitFlag_kESTS3Largest[2];
-      std::vector<bool> RecHitFlag_kESTS3Negative[2];
-      std::vector<bool> RecHitFlag_kESSaturated[2];
-      std::vector<bool> RecHitFlag_kESTS2Saturated[2];
-      std::vector<bool> RecHitFlag_kESTS3Saturated[2];
-      std::vector<bool> RecHitFlag_kESTS13Sigmas[2];
-      std::vector<bool> RecHitFlag_kESTS15Sigmas[2];
-
-      std::vector<bool>* RecHitFlag_container[18] = {
-         RecHitFlag_kGood,
-         RecHitFlag_kPoorReco,
-         RecHitFlag_kOutOfTime,
-         RecHitFlag_kFaultyHardware,
-         RecHitFlag_kNoisy,
-         RecHitFlag_kPoorCalib,
-         RecHitFlag_kSaturated,
-         RecHitFlag_kLeadingEdgeRecovered,
-         RecHitFlag_kNeighboursRecovered,
-         RecHitFlag_kTowerRecovered,
-         RecHitFlag_kDead,
-         RecHitFlag_kKilled,
-         RecHitFlag_kTPSaturated,
-         RecHitFlag_kL1SpikeFlag,
-         RecHitFlag_kWeird,
-         RecHitFlag_kDiWeird,
-         RecHitFlag_kHasSwitchToGain6,
-         RecHitFlag_kHasSwitchToGain1
-      };
-
-      std::vector<bool>* RecHitESFlag_container[16] = {
-         RecHitFlag_kESGood,
-         RecHitFlag_kESDead,
-         RecHitFlag_kESHot,
-         RecHitFlag_kESPassBX,
-         RecHitFlag_kESTwoGoodRatios,
-         RecHitFlag_kESBadRatioFor12,
-         RecHitFlag_kESBadRatioFor23Upper,
-         RecHitFlag_kESBadRatioFor23Lower,
-         RecHitFlag_kESTS1Largest,
-         RecHitFlag_kESTS3Largest,
-         RecHitFlag_kESTS3Negative,
-         RecHitFlag_kESSaturated,
-         RecHitFlag_kESTS2Saturated,
-         RecHitFlag_kESTS3Saturated,
-         RecHitFlag_kESTS13Sigmas,
-         RecHitFlag_kESTS15Sigmas
-      };
-
-
-      std::vector<float> Ele_pt_;
-      std::vector<float> Ele_eta_;
-      std::vector<float> Ele_phi_;
-      std::vector<float> Ele_energy_;
-      std::vector<float> Ele_ecal_mustache_energy_;
-
-      std::vector<float> Ele_R9;
-      std::vector<float> Ele_S4;
-      std::vector<float> Ele_SigIEIE;
-      std::vector<float> Ele_SigIPhiIPhi;
-      std::vector<float> Ele_SCEtaW;
-      std::vector<float> Ele_SCPhiW;
-      std::vector<float> Ele_CovIEtaIEta;
-      std::vector<float> Ele_CovIEtaIPhi;
-      std::vector<float> Ele_ESSigRR;
-      std::vector<float> Ele_SCRawE;
-      std::vector<float> Ele_SC_ESEnByRawE;
-      std::vector<float> Ele_HadOverEm;
-
-      std::vector<float> Ele_Gen_Pt;
-      std::vector<float> Ele_Gen_Eta;
-      std::vector<float> Ele_Gen_Phi;
-      std::vector<float> Ele_Gen_E;
-
-
-      std::vector<int> passLooseId_;
-      std::vector<int> passMediumId_;
-      std::vector<int> passTightId_;
-      std::vector<int> passMVAMediumId_;
-
-      std::vector<int> isTrue_;
-
-      // -----------------Handles--------------------------
-      edm::Handle<double> rhoHandle;
-      edm::Handle<EcalRecHitCollection> EBRechitsHandle;
-      edm::Handle<EcalRecHitCollection> EERechitsHandle;
-      edm::Handle<EcalRecHitCollection> ESRechitsHandle;
-      edm::Handle<edm::View<reco::GsfElectron> > electrons;
-      edm::Handle<edm::View<reco::GenParticle> > genParticles;
-      edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
-      edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
-      //---------------- Input Tags-----------------------
-      edm::EDGetTokenT<double> rhoToken_;
-      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEBToken_;
-      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEEToken_;
-      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionESToken_;
-      edm::EDGetToken electronsToken_;
-      edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesToken_;
-      edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
-      edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
-
-
-};
-
-//
-// constants, enums and typedefs
-//
-
-//
-// static data member definitions
-//
+#include "../interface/Electron_RefinedRecHit_NTuplizer.h"
 
 //
 // constructors and destructor
 //
+using namespace edm;
+using namespace std;
+using namespace reco;
+
 Electron_RefinedRecHit_NTuplizer::Electron_RefinedRecHit_NTuplizer(const edm::ParameterSet& iConfig):
    rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoFastJet"))),
    recHitCollectionEBToken_(consumes<EcalRecHitCollection>(edm::InputTag("reducedEcalRecHitsEB"))),
@@ -309,6 +16,8 @@ Electron_RefinedRecHit_NTuplizer::Electron_RefinedRecHit_NTuplizer(const edm::Pa
    eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
 {
    //now do what ever initialization is needed
+   isMC_ = iConfig.getParameter<bool>("isMC");
+   miniAODRun_ = iConfig.getParameter<bool>("miniAODRun");
    electronsToken_ = mayConsume<edm::View<reco::GsfElectron> >(iConfig.getParameter<edm::InputTag>("electrons"));
    genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("genParticles"));
    usesResource("TFileService");
@@ -335,10 +44,6 @@ Electron_RefinedRecHit_NTuplizer::~Electron_RefinedRecHit_NTuplizer()
    void
 Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-   using namespace edm;
-   using namespace std;
-   using namespace reco;
-
    iEvent.getByToken(rhoToken_, rhoHandle);
    iEvent.getByToken(recHitCollectionEBToken_, EBRechitsHandle);
    iEvent.getByToken(recHitCollectionEEToken_, EERechitsHandle);
@@ -375,12 +80,21 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
       if (nElectrons_ == 2) break;
       const auto ele = electrons->ptrAt(i);
       if( ele->pt() < 10 ) continue;
-      const SuperClusterRef& sc = ele->superCluster();
+      
+      const SuperClusterRef& sc = ele->superCluster(); // use for refined, comment out for unrefined
+      
+      //if (!ele->ecalDriven()) continue;
+      //if (ele->parentSuperCluster().isNull()) continue;
+      //const SuperClusterRef& sc = ele->parentSuperCluster();
+
       std::vector< std::pair<DetId, float> > hitsAndFractions = sc->hitsAndFractions();
+      
       isEB = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalBarrel);
       isEE = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalEndcap);
+      
       EBDetId* DidEB;
       EEDetId* DidEE;
+      
       EcalRecHitCollection::const_iterator oneHit;
       for (const auto&  detitr : hitsAndFractions) {
          if(isEB){
@@ -454,10 +168,10 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
       //        Ele_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
 
       ////// Look up and save the ID decisions
-      //        bool isPassMedium = (*medium_id_decisions)[ele];
-      //        bool isPassTight  = (*tight_id_decisions)[ele];
-      //        passMediumId_.push_back( (int) isPassMedium);
-      //        passTightId_.push_back ( (int) isPassTight );
+      bool isPassMedium = (*medium_id_decisions)[ele];
+      bool isPassTight  = (*tight_id_decisions)[ele];
+      passMediumId_.push_back( (int) isPassMedium);
+      passTightId_.push_back ( (int) isPassTight );
 
    }
 
@@ -465,13 +179,14 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
 
 
    //////////////////////// Gen Stuff hardcaded for status 1 electrons for now /////////////////////////////////////
-
-   for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
-      if( part->status()==1  && abs(part->pdgId())==11 ){
-         Ele_Gen_Pt.push_back(part->pt());
-         Ele_Gen_Eta.push_back(part->eta());
-         Ele_Gen_Phi.push_back(part->phi());
-         Ele_Gen_E.push_back(part->energy());
+   if (isMC_){
+      for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
+         if( part->status()==1  && abs(part->pdgId())==11 ){
+            Ele_Gen_Pt.push_back(part->pt());
+            Ele_Gen_Eta.push_back(part->eta());
+            Ele_Gen_Phi.push_back(part->phi());
+            Ele_Gen_E.push_back(part->energy());
+         }
       }
    }
 
@@ -492,7 +207,7 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
    ESHandle<SetupData> pSetup;
    iSetup.get<SetupRecord>().get(pSetup);
 #endif
-}
+}@@@@
 
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -577,6 +292,12 @@ Electron_RefinedRecHit_NTuplizer::beginJob()
    T->Branch("RecHitQuality2", &(RecHitQuality[1]));
    T->Branch("HitNoiseEle2", &(HitNoise[1]));
 
+   T->Branch("RecHitFlag_kGood_ele2", &(RecHitFlag_kGood[1]));
+   T->Branch("RecHitFlag_kPoorReco_ele2", &(RecHitFlag_kPoorReco[1]));
+   T->Branch("RecHitFlag_kOutOfTime_ele2", &(RecHitFlag_kOutOfTime[1]));
+   T->Branch("RecHitFlag_kFaultyHardware_ele2", &(RecHitFlag_kFaultyHardware[1]));
+   T->Branch("RecHitFlag_kNoisy_ele2", &(RecHitFlag_kNoisy[1]));
+   T->Branch("RecHitFlag_kPoorCalib_ele2", &(RecHitFlag_kPoorCalib[1]));
    T->Branch("RecHitFlag_kSaturated_ele2", &(RecHitFlag_kSaturated[1]));
    T->Branch("RecHitFlag_kLeadingEdgeRecovered_ele2", &(RecHitFlag_kLeadingEdgeRecovered[1]));
    T->Branch("RecHitFlag_kNeighboursRecovered_ele2", &(RecHitFlag_kNeighboursRecovered[1]));
@@ -631,10 +352,12 @@ Electron_RefinedRecHit_NTuplizer::beginJob()
    T->Branch("Ele_SC_ESEnByRawE"  ,  &Ele_SC_ESEnByRawE);
    T->Branch("Ele_HadOverEm"  ,  &Ele_HadOverEm);
 
-   T->Branch("Ele_Gen_Pt" , &Ele_Gen_Pt);
-   T->Branch("Ele_Gen_Eta" , &Ele_Gen_Eta);
-   T->Branch("Ele_Gen_Phi" , &Ele_Gen_Phi);
-   T->Branch("Ele_Gen_E" , &Ele_Gen_E);
+   if (isMC_){
+      T->Branch("Ele_Gen_Pt" , &Ele_Gen_Pt);
+      T->Branch("Ele_Gen_Eta" , &Ele_Gen_Eta);
+      T->Branch("Ele_Gen_Phi" , &Ele_Gen_Phi);
+      T->Branch("Ele_Gen_E" , &Ele_Gen_E);
+   }
 
    T->Branch("rho", &rho, "rho/F");
 
@@ -815,10 +538,12 @@ void Electron_RefinedRecHit_NTuplizer::ClearTreeVectors()
    Ele_SC_ESEnByRawE.clear();
    Ele_HadOverEm.clear();
 
-   Ele_Gen_Pt.clear();
-   Ele_Gen_Eta.clear();
-   Ele_Gen_Phi.clear();
-   Ele_Gen_E.clear();
+   if (isMC_){
+      Ele_Gen_Pt.clear();
+      Ele_Gen_Eta.clear();
+      Ele_Gen_Phi.clear();
+      Ele_Gen_E.clear();
+   }
 
    RecHitFlag_kGood[1].clear();
    RecHitFlag_kPoorReco[1].clear();
