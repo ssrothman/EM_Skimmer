@@ -207,7 +207,7 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
    ESHandle<SetupData> pSetup;
    iSetup.get<SetupRecord>().get(pSetup);
 #endif
-}@@@@
+}
 
 
 // ------------ method called once each job just before starting event loop  ------------
