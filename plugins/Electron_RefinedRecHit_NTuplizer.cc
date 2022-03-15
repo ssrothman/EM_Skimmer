@@ -3,10 +3,230 @@
 //
 // constructors and destructor
 //
+
+// If the analyzer does not use TFileService, please remove
+// the template argument to the base class so the class inherits
+// from  edm::one::EDAnalyzer<>
+// This will improve performance in multithreaded jobs.
+
 using namespace edm;
 using namespace std;
 using namespace reco;
 
+//using reco::TrackCollection;
+
+class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+   public:
+      explicit Electron_RefinedRecHit_NTuplizer(const edm::ParameterSet&);
+      ~Electron_RefinedRecHit_NTuplizer();
+
+      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+
+      std::vector<float> Hit_ES_Eta[2];
+      std::vector<float> Hit_ES_Phi[2];
+      std::vector<float> Hit_ES_X[2];
+      std::vector<float> Hit_ES_Y[2];
+      std::vector<float> Hit_ES_Z[2];
+      std::vector<float> ES_RecHitEn[2];
+
+
+   private:
+      virtual void beginJob() override;
+      virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
+      virtual void endJob() override;
+
+
+      bool DEBUG = false;
+      
+
+      //   cluster tools
+      EcalClusterLazyTools *clustertools;
+      noZS::EcalClusterLazyTools *clustertools_NoZS;
+      edm::ESHandle<EcalPedestals> _ped;
+
+      //   Identify if the SC lies in EB OR EE based on its seed
+      bool isEB = 0;
+      bool isEE = 0; // !isEB not sufficient since later will try to include the preshower as well
+
+
+      //     bool GetGenMatchType(const reco::Eleton& Electron, const reco::GenParticle& GenColl, int pdgId, double dRThresh);
+      // Get the hits from the ES
+      //     std::vector<GlobalPoint> GetESPlaneRecHits(const reco::SuperCluster& sc, unsigned int planeIndex) const;
+      void GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int elenum, unsigned int planeIndex);
+
+      //   clear the vectors 
+      void ClearTreeVectors();
+      // ----------member data ---------------------------
+      TTree* T;
+
+      // Variables for Run info.
+      int run;
+      int event;
+      int lumi;
+
+      // Electron variables
+      int nElectrons_;
+      Float_t rho;
+      std::vector<float> iEta[2];
+      std::vector<float> iPhi[2];
+      std::vector<float> Hit_Eta[2];
+      std::vector<float> Hit_Phi[2];
+      std::vector<float> Hit_X[2];
+      std::vector<float> Hit_Y[2];
+      std::vector<float> Hit_Z[2];
+
+
+      std::vector<float> RecHitFrac[2];
+      std::vector<float> RecHitEn[2];
+      std::vector<int>   RecHitGain[2];
+      std::vector<bool>  RecHitQuality[2];
+      std::vector<float> HitNoise[2];
+
+      // individual flags
+      std::vector<bool> RecHitFlag_kGood[2];                   // channel ok, the energy and time measurement are reliable
+      std::vector<bool> RecHitFlag_kPoorReco[2];                 // the energy is available from the UncalibRecHit, but approximate (bad shape, large chi2)
+      std::vector<bool> RecHitFlag_kOutOfTime[2];                // the energy is available from the UncalibRecHit (sync reco), but the event is out of time
+      std::vector<bool> RecHitFlag_kFaultyHardware[2];           // The energy is available from the UncalibRecHit, channel is faulty at some hardware level (e.g. noisy)
+      std::vector<bool> RecHitFlag_kNoisy[2];                    // the channel is very noisy
+      std::vector<bool> RecHitFlag_kPoorCalib[2];                // the energy is available from the UncalibRecHit, but the calibration of the channel is poor
+      std::vector<bool> RecHitFlag_kSaturated[2];                // saturated channel (recovery not tried)
+      std::vector<bool> RecHitFlag_kLeadingEdgeRecovered[2];     // saturated channel: energy estimated from the leading edge before saturation
+      std::vector<bool> RecHitFlag_kNeighboursRecovered[2];      // saturated/isolated dead: energy estimated from neighbours
+      std::vector<bool> RecHitFlag_kTowerRecovered[2];           // channel in TT with no data link, info retrieved from Trigger Primitive
+      std::vector<bool> RecHitFlag_kDead[2];                     // channel is dead and any recovery fails
+      std::vector<bool> RecHitFlag_kKilled[2];                   // MC only flag: the channel is killed in the real detector
+      std::vector<bool> RecHitFlag_kTPSaturated[2];              // the channel is in a region with saturated TP
+      std::vector<bool> RecHitFlag_kL1SpikeFlag[2];              // the channel is in a region with TP with sFGVB = 0
+      std::vector<bool> RecHitFlag_kWeird[2];                    // the signal is believed to originate from an anomalous deposit (spike) 
+      std::vector<bool> RecHitFlag_kDiWeird[2];                  // the signal is anomalous, and neighbors another anomalous signal  
+      std::vector<bool> RecHitFlag_kHasSwitchToGain6[2];         // at least one data frame is in G6
+      std::vector<bool> RecHitFlag_kHasSwitchToGain1[2];         // at least one data frame is in G1
+
+      // individual ES flags
+      std::vector<bool> RecHitFlag_kESGood[2];
+      std::vector<bool> RecHitFlag_kESDead[2];
+      std::vector<bool> RecHitFlag_kESHot[2];
+      std::vector<bool> RecHitFlag_kESPassBX[2];
+      std::vector<bool> RecHitFlag_kESTwoGoodRatios[2];
+      std::vector<bool> RecHitFlag_kESBadRatioFor12[2];
+      std::vector<bool> RecHitFlag_kESBadRatioFor23Upper[2];
+      std::vector<bool> RecHitFlag_kESBadRatioFor23Lower[2];
+      std::vector<bool> RecHitFlag_kESTS1Largest[2];
+      std::vector<bool> RecHitFlag_kESTS3Largest[2];
+      std::vector<bool> RecHitFlag_kESTS3Negative[2];
+      std::vector<bool> RecHitFlag_kESSaturated[2];
+      std::vector<bool> RecHitFlag_kESTS2Saturated[2];
+      std::vector<bool> RecHitFlag_kESTS3Saturated[2];
+      std::vector<bool> RecHitFlag_kESTS13Sigmas[2];
+      std::vector<bool> RecHitFlag_kESTS15Sigmas[2];
+
+      std::vector<bool>* RecHitFlag_container[18] = {
+         RecHitFlag_kGood,
+         RecHitFlag_kPoorReco,
+         RecHitFlag_kOutOfTime,
+         RecHitFlag_kFaultyHardware,
+         RecHitFlag_kNoisy,
+         RecHitFlag_kPoorCalib,
+         RecHitFlag_kSaturated,
+         RecHitFlag_kLeadingEdgeRecovered,
+         RecHitFlag_kNeighboursRecovered,
+         RecHitFlag_kTowerRecovered,
+         RecHitFlag_kDead,
+         RecHitFlag_kKilled,
+         RecHitFlag_kTPSaturated,
+         RecHitFlag_kL1SpikeFlag,
+         RecHitFlag_kWeird,
+         RecHitFlag_kDiWeird,
+         RecHitFlag_kHasSwitchToGain6,
+         RecHitFlag_kHasSwitchToGain1
+      };
+
+      std::vector<bool>* RecHitESFlag_container[16] = {
+         RecHitFlag_kESGood,
+         RecHitFlag_kESDead,
+         RecHitFlag_kESHot,
+         RecHitFlag_kESPassBX,
+         RecHitFlag_kESTwoGoodRatios,
+         RecHitFlag_kESBadRatioFor12,
+         RecHitFlag_kESBadRatioFor23Upper,
+         RecHitFlag_kESBadRatioFor23Lower,
+         RecHitFlag_kESTS1Largest,
+         RecHitFlag_kESTS3Largest,
+         RecHitFlag_kESTS3Negative,
+         RecHitFlag_kESSaturated,
+         RecHitFlag_kESTS2Saturated,
+         RecHitFlag_kESTS3Saturated,
+         RecHitFlag_kESTS13Sigmas,
+         RecHitFlag_kESTS15Sigmas
+      };
+
+
+      std::vector<float> Ele_pt_;
+      std::vector<float> Ele_eta_;
+      std::vector<float> Ele_phi_;
+      std::vector<float> Ele_energy_;
+      std::vector<float> Ele_ecal_mustache_energy_;
+
+      std::vector<float> Ele_R9;
+      std::vector<float> Ele_S4;
+      std::vector<float> Ele_SigIEIE;
+      std::vector<float> Ele_SigIPhiIPhi;
+      std::vector<float> Ele_SCEtaW;
+      std::vector<float> Ele_SCPhiW;
+      std::vector<float> Ele_CovIEtaIEta;
+      std::vector<float> Ele_CovIEtaIPhi;
+      std::vector<float> Ele_ESSigRR;
+      std::vector<float> Ele_SCRawE;
+      std::vector<float> Ele_SC_ESEnByRawE;
+      std::vector<float> Ele_HadOverEm;
+
+      std::vector<float> Ele_Gen_Pt;
+      std::vector<float> Ele_Gen_Eta;
+      std::vector<float> Ele_Gen_Phi;
+      std::vector<float> Ele_Gen_E;
+
+
+      std::vector<int> passLooseId_;
+      std::vector<int> passMediumId_;
+      std::vector<int> passTightId_;
+      std::vector<int> passMVAMediumId_;
+
+      std::vector<int> isTrue_;
+
+      // -----------------Handles--------------------------
+      edm::Handle<double> rhoHandle;
+      edm::Handle<EcalRecHitCollection> EBRechitsHandle;
+      edm::Handle<EcalRecHitCollection> EERechitsHandle;
+      edm::Handle<EcalRecHitCollection> ESRechitsHandle;
+      edm::Handle<edm::View<reco::GsfElectron> > electrons;
+      edm::Handle<edm::View<reco::GenParticle> > genParticles;
+      edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
+      edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
+      //---------------- Input Tags-----------------------
+      edm::EDGetTokenT<double> rhoToken_;
+      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEBToken_;
+      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEEToken_;
+      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionESToken_;
+      edm::EDGetToken electronsToken_;
+      edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
+
+
+};
+
+//
+// constants, enums and typedefs
+//
+
+//
+// static data member definitions
+//
+
+//
+// constructors and destructor
+//
+>>>>>>> ff62a2faa584a36a5a6c5ce22c2b71881e33b52f
 Electron_RefinedRecHit_NTuplizer::Electron_RefinedRecHit_NTuplizer(const edm::ParameterSet& iConfig):
    rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoFastJet"))),
    recHitCollectionEBToken_(consumes<EcalRecHitCollection>(edm::InputTag("reducedEcalRecHitsEB"))),
