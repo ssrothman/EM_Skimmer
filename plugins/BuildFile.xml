@@ -2,7 +2,6 @@
 <use name="FWCore/PluginManager"/>
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/ServiceRegistry"/>
-<use name="CommonTools/UtilAlgos"/>
 <use name="Geometry/CaloTopology"/>
 <use name="Geometry/EcalAlgo"/>
 <use name="DataFormats/EgammaReco"/>
@@ -36,5 +35,6 @@
    <use name="rootrflx"/>
    <use name="rootmath"/>
    <use name="boost"/>
+   <use name="rootxmlio"/>
    <Flags EDM_PLUGIN="1"/>
 </library>

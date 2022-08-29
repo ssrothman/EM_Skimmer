@@ -1,305 +1,13 @@
-
-// -*- C++ -*-
-//
-// Package:    Electron_GNN_Regression/Photon_RefinedRecHit_NTuplizer
-// Class:      Photon_RefinedRecHit_NTuplizer
-//
-/**\class Photon_RefinedRecHit_NTuplizer Photon_RefinedRecHit_NTuplizer.cc Electron_GNN_Regression/Photon_RefinedRecHit_NTuplizer/plugins/Photon_RefinedRecHit_NTuplizer.cc
-
-Description: [one line class summary]
-
-Implementation:
-[Notes on implementation]
-*/
-//
-// Original Author:  Rajdeep Mohan Chatterjee
-//         Created:  Fri, 21 Feb 2020 11:38:58 GMT
-//
-//
-
-
-// system include files
-#include <memory>
-#include <iostream>
-#include "TTree.h"
-#include "Math/VectorUtil.h"
-#include "TFile.h"
-// user include files
-#include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/one/EDAnalyzer.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-
-#include "FWCore/ServiceRegistry/interface/Service.h"
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
-
-
-#include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
-#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
-#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
-#include "Geometry/CaloGeometry/interface/TruncatedPyramid.h"
-#include "Geometry/EcalAlgo/interface/EcalPreshowerGeometry.h"
-#include "Geometry/CaloTopology/interface/EcalPreshowerTopology.h"
-#include "Geometry/Records/interface/CaloGeometryRecord.h"
-#include "Geometry/CaloEventSetup/interface/CaloTopologyRecord.h"
-#include "Geometry/CaloTopology/interface/CaloTopology.h"
-
-#include "CondFormats/EcalObjects/interface/EcalPedestals.h"
-#include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
-
-#include "DataFormats/EgammaCandidates/interface/Photon.h"
-#include "DataFormats/PatCandidates/interface/Photon.h"
-
-#include "DataFormats/Candidate/interface/Candidate.h"
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-
-#include "DataFormats/Common/interface/ValueMap.h"
-#include "DataFormats/PatCandidates/interface/VIDCutFlowResult.h"
-
-#include "DataFormats/EgammaReco/interface/SuperCluster.h"
-
-#include "DataFormats/MuonReco/interface/Muon.h"
-#include "DataFormats/MuonReco/interface/MuonSelectors.h"
-#include "DataFormats/PatCandidates/interface/Muon.h"
-#include "DataFormats/VertexReco/interface/VertexFwd.h"
-#include "DataFormats/VertexReco/interface/Vertex.h"
-
-#include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
-#include "RecoEcal/EgammaCoreTools/interface/EcalClusterLazyTools.h"
-#include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
-
-#include "DataFormats/EcalDetId/interface/EcalSubdetector.h"
-#include "DataFormats/EcalDetId/interface/EBDetId.h"
-#include "DataFormats/EcalDetId/interface/EEDetId.h"
-#include "DataFormats/EcalDetId/interface/ESDetId.h"
-#include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
-#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
-//
-//
-// class declaration
-//
-
-// If the analyzer does not use TFileService, please remove
-// the template argument to the base class so the class inherits
-// from  edm::one::EDAnalyzer<>
-// This will improve performance in multithreaded jobs.
-
+#include "../interface/Photon_RefinedRecHit_NTuplizer.h"
+#include "../src/getEcalMapXML.h"
 
 //using reco::TrackCollection;
+
 using namespace std;
+using namespace edm;
+using namespace reco;
+using namespace pat;
 
-class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
-   public:
-      explicit Photon_RefinedRecHit_NTuplizer(const edm::ParameterSet&);
-      ~Photon_RefinedRecHit_NTuplizer();
-
-      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
-      std::vector<float> Hit_ES_Eta[2];
-      std::vector<float> Hit_ES_Phi[2];
-      std::vector<float> Hit_ES_X[2];
-      std::vector<float> Hit_ES_Y[2];
-      std::vector<float> Hit_ES_Z[2];
-      std::vector<float> ES_RecHitEn[2];
-
-
-   private:
-      virtual void beginJob() override;
-      virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
-      virtual void endJob() override;
-
-
-      bool DEBUG = false;
-
-
-      //   cluster tools
-      EcalClusterLazyTools *clustertools;
-      noZS::EcalClusterLazyTools *clustertools_NoZS;
-      edm::ESHandle<EcalPedestals> _ped;
-
-      //   Identify if the SC lies in EB OR EE based on its seed
-      bool isEB = 0;
-      bool isEE = 0; // !isEB not sufficient since later will try to include the preshower as well
-
-
-      //     bool GetGenMatchType(const reco::Photon& Photon, const reco::GenParticle& GenColl, int pdgId, double dRThresh);
-      // Get the hits from the ES
-      //     std::vector<GlobalPoint> GetESPlaneRecHits(const reco::SuperCluster& sc, unsigned int planeIndex) const;
-      void GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int phonum, unsigned int planeIndex);
-
-      //   clear the vectors 
-      void ClearTreeVectors();
-      // ----------member data ---------------------------
-      TTree* T;
-
-      // Variables for Run info.
-      int run;
-      int event;
-      int lumi;
-
-      // Electron variables
-      int nPhotons_;
-      Float_t rho;
-      std::vector<float> iEta[2];
-      std::vector<float> iPhi[2];
-      std::vector<float> Hit_Eta[2];
-      std::vector<float> Hit_Phi[2];
-      std::vector<float> Hit_X[2];
-      std::vector<float> Hit_Y[2];
-      std::vector<float> Hit_Z[2];
-
-
-      std::vector<float> RecHitFrac[2];
-      std::vector<float> RecHitEn[2];
-      std::vector<int>   RecHitGain[2];
-      std::vector<bool>  RecHitQuality[2];
-      std::vector<float> HitNoise[2];
-
-      // individual flags
-      std::vector<bool> RecHitFlag_kGood[2];                   // channel ok, the energy and time measurement are reliable
-      std::vector<bool> RecHitFlag_kPoorReco[2];                 // the energy is available from the UncalibRecHit, but approximate (bad shape, large chi2)
-      std::vector<bool> RecHitFlag_kOutOfTime[2];                // the energy is available from the UncalibRecHit (sync reco), but the event is out of time
-      std::vector<bool> RecHitFlag_kFaultyHardware[2];           // The energy is available from the UncalibRecHit, channel is faulty at some hardware level (e.g. noisy)
-      std::vector<bool> RecHitFlag_kNoisy[2];                    // the channel is very noisy
-      std::vector<bool> RecHitFlag_kPoorCalib[2];                // the energy is available from the UncalibRecHit, but the calibration of the channel is poor
-      std::vector<bool> RecHitFlag_kSaturated[2];                // saturated channel (recovery not tried)
-      std::vector<bool> RecHitFlag_kLeadingEdgeRecovered[2];     // saturated channel: energy estimated from the leading edge before saturation
-      std::vector<bool> RecHitFlag_kNeighboursRecovered[2];      // saturated/isolated dead: energy estimated from neighbours
-      std::vector<bool> RecHitFlag_kTowerRecovered[2];           // channel in TT with no data link, info retrieved from Trigger Primitive
-      std::vector<bool> RecHitFlag_kDead[2];                     // channel is dead and any recovery fails
-      std::vector<bool> RecHitFlag_kKilled[2];                   // MC only flag: the channel is killed in the real detector
-      std::vector<bool> RecHitFlag_kTPSaturated[2];              // the channel is in a region with saturated TP
-      std::vector<bool> RecHitFlag_kL1SpikeFlag[2];              // the channel is in a region with TP with sFGVB = 0
-      std::vector<bool> RecHitFlag_kWeird[2];                    // the signal is believed to originate from an anomalous deposit (spike) 
-      std::vector<bool> RecHitFlag_kDiWeird[2];                  // the signal is anomalous, and neighbors another anomalous signal  
-      std::vector<bool> RecHitFlag_kHasSwitchToGain6[2];         // at least one data frame is in G6
-      std::vector<bool> RecHitFlag_kHasSwitchToGain1[2];         // at least one data frame is in G1
-
-      // individual ES flags
-      std::vector<bool> RecHitFlag_kESGood[2];
-      std::vector<bool> RecHitFlag_kESDead[2];
-      std::vector<bool> RecHitFlag_kESHot[2];
-      std::vector<bool> RecHitFlag_kESPassBX[2];
-      std::vector<bool> RecHitFlag_kESTwoGoodRatios[2];
-      std::vector<bool> RecHitFlag_kESBadRatioFor12[2];
-      std::vector<bool> RecHitFlag_kESBadRatioFor23Upper[2];
-      std::vector<bool> RecHitFlag_kESBadRatioFor23Lower[2];
-      std::vector<bool> RecHitFlag_kESTS1Largest[2];
-      std::vector<bool> RecHitFlag_kESTS3Largest[2];
-      std::vector<bool> RecHitFlag_kESTS3Negative[2];
-      std::vector<bool> RecHitFlag_kESSaturated[2];
-      std::vector<bool> RecHitFlag_kESTS2Saturated[2];
-      std::vector<bool> RecHitFlag_kESTS3Saturated[2];
-      std::vector<bool> RecHitFlag_kESTS13Sigmas[2];
-      std::vector<bool> RecHitFlag_kESTS15Sigmas[2];
-
-      std::vector<bool>* RecHitFlag_container[18] = {
-         RecHitFlag_kGood,
-         RecHitFlag_kPoorReco,
-         RecHitFlag_kOutOfTime,
-         RecHitFlag_kFaultyHardware,
-         RecHitFlag_kNoisy,
-         RecHitFlag_kPoorCalib,
-         RecHitFlag_kSaturated,
-         RecHitFlag_kLeadingEdgeRecovered,
-         RecHitFlag_kNeighboursRecovered,
-         RecHitFlag_kTowerRecovered,
-         RecHitFlag_kDead,
-         RecHitFlag_kKilled,
-         RecHitFlag_kTPSaturated,
-         RecHitFlag_kL1SpikeFlag,
-         RecHitFlag_kWeird,
-         RecHitFlag_kDiWeird,
-         RecHitFlag_kHasSwitchToGain6,
-         RecHitFlag_kHasSwitchToGain1
-      };
-
-      std::vector<bool>* RecHitESFlag_container[16] = {
-         RecHitFlag_kESGood,
-         RecHitFlag_kESDead,
-         RecHitFlag_kESHot,
-         RecHitFlag_kESPassBX,
-         RecHitFlag_kESTwoGoodRatios,
-         RecHitFlag_kESBadRatioFor12,
-         RecHitFlag_kESBadRatioFor23Upper,
-         RecHitFlag_kESBadRatioFor23Lower,
-         RecHitFlag_kESTS1Largest,
-         RecHitFlag_kESTS3Largest,
-         RecHitFlag_kESTS3Negative,
-         RecHitFlag_kESSaturated,
-         RecHitFlag_kESTS2Saturated,
-         RecHitFlag_kESTS3Saturated,
-         RecHitFlag_kESTS13Sigmas,
-         RecHitFlag_kESTS15Sigmas
-      };
-
-
-      std::vector<float> Pho_pt_;
-      std::vector<float> Pho_eta_;
-      std::vector<float> Pho_phi_;
-      std::vector<float> Pho_energy_;
-      std::vector<float> Pho_ecal_mustache_energy_;
-
-      std::vector<float> Pho_R9;
-      std::vector<float> Pho_S4;
-      std::vector<float> Pho_SigIEIE;
-      std::vector<float> Pho_SigIPhiIPhi;
-      std::vector<float> Pho_SCEtaW;
-      std::vector<float> Pho_SCPhiW;
-      std::vector<float> Pho_CovIEtaIEta;
-      std::vector<float> Pho_CovIEtaIPhi;
-      std::vector<float> Pho_ESSigRR;
-      std::vector<float> Pho_SCRawE;
-      std::vector<float> Pho_SC_ESEnByRawE;
-      std::vector<float> Pho_HadOverEm;
-
-      std::vector<float> Pho_Gen_Pt;
-      std::vector<float> Pho_Gen_Eta;
-      std::vector<float> Pho_Gen_Phi;
-      std::vector<float> Pho_Gen_E;
-
-
-      std::vector<int> passLooseId_;
-      std::vector<int> passMediumId_;
-      std::vector<int> passTightId_;
-      std::vector<int> passMVAMediumId_;
-
-      std::vector<int> isTrue_;
-
-      // -----------------Handles--------------------------
-      edm::Handle<double> rhoHandle;
-      edm::Handle<EcalRecHitCollection> EBRechitsHandle;
-      edm::Handle<EcalRecHitCollection> EERechitsHandle;
-      edm::Handle<EcalRecHitCollection> ESRechitsHandle;
-      edm::Handle<edm::View<reco::Photon> > photons;
-      edm::Handle<edm::View<reco::GenParticle> > genParticles;
-      edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
-      edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
-      //---------------- Input Tags-----------------------
-      edm::EDGetTokenT<double> rhoToken_;
-      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEBToken_;
-      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEEToken_;
-      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionESToken_;
-      edm::EDGetToken photonsToken_;
-      edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesToken_;
-      edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
-      edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
-
-
-};
-
-//
-// constants, enums and typedefs
-//
-
-//
-// static data member definitions
-//
-
-//
-// constructors and destructor
-//
 Photon_RefinedRecHit_NTuplizer::Photon_RefinedRecHit_NTuplizer(const edm::ParameterSet& iConfig):
    rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoFastJet"))),
    recHitCollectionEBToken_(consumes<EcalRecHitCollection>(edm::InputTag("reducedEcalRecHitsEB"))),
@@ -309,9 +17,19 @@ Photon_RefinedRecHit_NTuplizer::Photon_RefinedRecHit_NTuplizer(const edm::Parame
    eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
 {
    //now do what ever initialization is needed
+   isMC_ = iConfig.getParameter<bool>("isMC");
+   miniAODRun_ = iConfig.getParameter<bool>("miniAODRun");
+   useOuterHits_ = iConfig.getParameter<bool>("useOuterHits");
+   ebNeighbourXtalMap_ = iConfig.getParameter<edm::FileInPath>("ebNeighbourXtalMap");
+   eeNeighbourXtalMap_ = iConfig.getParameter<edm::FileInPath>("eeNeighbourXtalMap");
+
    photonsToken_ = mayConsume<edm::View<reco::Photon> >(iConfig.getParameter<edm::InputTag>("photons"));
    genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("genParticles"));
    usesResource("TFileService");
+
+   //if (useOuterHits_) readLUTables(); // read look up tables (dR = 0.3 for now)
+   if (useOuterHits_) readROOTLUTables(); // read look up tables (dR = 0.3 for now)
+
 }
 
 
@@ -320,24 +38,134 @@ Photon_RefinedRecHit_NTuplizer::~Photon_RefinedRecHit_NTuplizer()
 
    // do anything here that needs to be done at desctruction time
    // (e.g. close files, deallocate resources etc.)
-
-
-
-
 }
-
 
 //
 // member functions
 //
 
+// Method to load look up tables
+void Photon_RefinedRecHit_NTuplizer::readROOTLUTables(){
+   int id;
+   vector<int>* nids;
+
+   nids = 0;
+
+   TFile* file_eb = new TFile(ebNeighbourXtalMap_.fullPath().c_str(), "read");
+   TFile* file_ee = new TFile(eeNeighbourXtalMap_.fullPath().c_str(), "read");
+
+   TTree* tree_eb = (TTree*)file_eb->Get("xtal_map");
+   TTree* tree_ee = (TTree*)file_ee->Get("xtal_map");
+
+   tree_eb->SetBranchAddress("id", &id);
+   tree_eb->SetBranchAddress("nids", &nids);
+
+   for (int ientry=0; ientry<tree_eb->GetEntriesFast(); ientry++){
+      tree_eb->GetEntry(ientry);
+      ebnxtals.insert({id, nids[0]});
+   }
+   
+   tree_ee->SetBranchAddress("id", &id);
+   tree_ee->SetBranchAddress("nids", &nids);
+
+   for (int ientry=0; ientry<tree_ee->GetEntriesFast(); ientry++){
+      tree_ee->GetEntry(ientry);
+      eenxtals.insert({id, nids[0]});
+   }
+
+   file_eb->Close();
+   file_ee->Close();
+
+}
+
+// Method to load look up tables from xml files
+void
+Photon_RefinedRecHit_NTuplizer::readXMLLUTables(){
+
+
+   // load EE and EB maps (dR = 0.3)
+   TXMLEngine xml;
+
+   XMLDocPointer_t xmldoc_eb = xml.ParseFile(ebNeighbourXtalMap_.fullPath().c_str());
+   XMLDocPointer_t xmldoc_ee = xml.ParseFile(eeNeighbourXtalMap_.fullPath().c_str());
+
+   XMLNodePointer_t root_node_eb = xml.DocGetRootElement(xmldoc_eb);
+   XMLNodePointer_t root_node_ee = xml.DocGetRootElement(xmldoc_ee);
+
+   // Fill the maps from corresponding XML files 
+
+   XMLNodePointer_t eb_xtal = xml.GetChild(root_node_eb);
+   XMLNodePointer_t ee_xtal = xml.GetChild(root_node_ee);
+
+   // Iterate over all crystals in barrel
+   while(eb_xtal!=0){
+      // get the next crystal
+      vector<int> tmpvec;
+      int xtalid = atoi(xml.GetNodeContent(eb_xtal));
+      XMLNodePointer_t eb_xtal_n = xml.GetChild(eb_xtal);
+
+      while(eb_xtal_n!=0){
+         // get the next neighbour
+         tmpvec.push_back(atoi(xml.GetNodeContent(eb_xtal_n)));
+         eb_xtal_n = xml.GetNext(eb_xtal_n);   
+      }
+
+      ebnxtals.insert({xtalid, tmpvec});
+      eb_xtal = xml.GetNext(eb_xtal);
+   }
+
+   // Iterate over all crystals in endcaps
+   while(ee_xtal!=0){
+      // get the next crystal
+      vector<int> tmpvec;
+      int xtalid = atoi(xml.GetNodeContent(ee_xtal));
+      XMLNodePointer_t ee_xtal_n = xml.GetChild(ee_xtal);
+
+      while(ee_xtal_n!=0){
+         // get the next neighbour
+         tmpvec.push_back(atoi(xml.GetNodeContent(ee_xtal_n)));
+         ee_xtal_n = xml.GetNext(ee_xtal_n);   
+      }
+
+      eenxtals.insert({xtalid, tmpvec});
+      ee_xtal = xml.GetNext(ee_xtal);
+   }
+
+   // free pointers
+   xml.FreeDoc(xmldoc_eb);
+   xml.FreeDoc(xmldoc_ee);
+
+}
+
+std::vector<int> Photon_RefinedRecHit_NTuplizer::getDiffArray(std::vector<int>& A, std::vector<int>& B){
+
+   std::sort(A.begin(), A.end());
+   std::sort(B.begin(), B.end());
+
+   std::vector<int> diff(0);
+   unsigned int j=0;
+
+   for (unsigned int i=0; i<A.size(); i++){
+      if (A[i]==B[j]) {
+         j++;
+      }
+      else if (B[j]<A[i]){
+         diff.push_back(B[j]);  
+         j++;
+         i--;
+      }
+      else if (B[j]>A[i]){
+         diff.push_back(A[i]);
+      }
+   }
+
+   return diff;
+}
+
 // ------------ method called for each event  ------------
    void
 Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-   using namespace edm;
-   using namespace std;
-   using namespace reco;
 
    iEvent.getByToken(rhoToken_, rhoHandle);
    iEvent.getByToken(recHitCollectionEBToken_, EBRechitsHandle);
@@ -347,6 +175,11 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
    iEvent.getByToken(genParticlesToken_, genParticles);
    iEvent.getByToken(eleMediumIdMapToken_, medium_id_decisions);
    iEvent.getByToken(eleTightIdMapToken_ , tight_id_decisions);
+
+
+   // get maps
+   // getEBMapXML(iSetup);
+   // getEEMapXML(iSetup);
 
 
    ESHandle<CaloGeometry> pG;
@@ -371,7 +204,11 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
    nPhotons_ = 0;
    const EcalRecHitCollection *recHitsEB = clustertools_NoZS->getEcalEBRecHitCollection();
    const EcalRecHitCollection *recHitsEE = clustertools_NoZS->getEcalEERecHitCollection();
+
+   //cout<<"================ Event ==================="<<endl;
+
    for (size_t i = 0; i < photons->size(); ++i){
+      //cout<<"----------- Photon ------------"<<endl;
       if (nPhotons_ == 2) break;
       const auto pho = photons->ptrAt(i);
       if( pho->pt() < 10 ) continue;
@@ -380,9 +217,17 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       std::vector< std::pair<DetId, float> > hitsAndFractions = sc->hitsAndFractions();
       isEB = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalBarrel);
       isEE = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalEndcap);
+
       EBDetId* DidEB;
       EEDetId* DidEE;
+
       EcalRecHitCollection::const_iterator oneHit;
+
+      std::vector<int> EBHitsAndFractions;
+      std::vector<int> EEHitsAndFractions;
+
+      //cout<<"*** supercluster hits ***"<<endl;
+
       for (const auto&  detitr : hitsAndFractions) {
          if(isEB){
             DidEB = new EBDetId(detitr.first.rawId());
@@ -396,7 +241,13 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
             Hit_X[nPhotons_].push_back(geom->getPosition().x());
             Hit_Y[nPhotons_].push_back(geom->getPosition().y());
             Hit_Z[nPhotons_].push_back(geom->getPosition().z());
+
+            // Catalog the hits EB
+            EBHitsAndFractions.push_back(DidEB->numberByEtaPhi());
+            //cout<<*DidEB<<endl;
+
          }
+
          else if(isEE){
             DidEE = new EEDetId(detitr.first.rawId());
             DetId Did   = detitr.first.rawId();
@@ -409,6 +260,10 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
             Hit_X[nPhotons_].push_back(geom->getPosition().x());
             Hit_Y[nPhotons_].push_back(geom->getPosition().y());
             Hit_Z[nPhotons_].push_back(geom->getPosition().z());
+
+            // Catalog the hits in EE
+            EEHitsAndFractions.push_back(DidEE->hashedIndex());
+            //cout<<*DidEE<<endl;
          }
 
          RecHitEn[nPhotons_].push_back(oneHit->energy());
@@ -423,11 +278,135 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
          if (DEBUG) cout<<endl<<" Reco Flags = "<<oneHit->recoFlag()<<endl;
 
          if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) 		RecHitGain[nPhotons_].push_back(6);
-         else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1))            RecHitGain[nPhotons_].push_back(1);
+         else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1)) RecHitGain[nPhotons_].push_back(1);
          else RecHitGain[nPhotons_].push_back(12);
          HitNoise[nPhotons_].push_back(_ped->find(detitr.first)->rms(1));
-      }  
+      }
 
+      // Get the cluster seed
+      const CaloClusterPtr seed_clu = sc->seed();
+      const math::XYZPoint seed_pos = seed_clu->position();
+      DetId seedRawId = (seed_clu->seed()).rawId();
+      float seed_eta=-99.;
+      float seed_phi=-99.;
+
+      // Add the rechits within (dR==0.3 for now)
+      // EB region outer hits
+      if (useOuterHits_ && isEB){
+
+         DidEB = new EBDetId(seedRawId);
+         shared_ptr<const CaloCellGeometry> geom = ecalEBGeom->getGeometry(seedRawId);
+         seed_eta = geom->etaPos();
+         seed_phi = geom->phiPos();
+
+         // Get list of all neighboutring xtals to the seed
+         auto uncheckedXtals = ebnxtals[DidEB->numberByEtaPhi()];
+
+         for (unsigned int ixtal=0; ixtal<uncheckedXtals.size(); ixtal++){
+
+            if (std::find(EBHitsAndFractions.begin(),
+                     EBHitsAndFractions.end(),
+                     uncheckedXtals[ixtal])!=EBHitsAndFractions.end()) continue;
+
+            EBDetId detitr = EBDetId::unhashIndex(uncheckedXtals[ixtal]); // covert from hash to EBDetId
+            DetId Did   = detitr.rawId();
+            DidEB = new EBDetId(Did);
+
+            shared_ptr<const CaloCellGeometry> geom = ecalEBGeom->getGeometry(Did);
+            oneHit = recHitsEB->find(detitr) ;
+
+            if (oneHit==recHitsEB->end()) continue;
+
+            //cout<<"detitr = "<<detitr<<endl;
+            //float tmpdr = reco::deltaR(seed_ieta, seed_iphi, geom->etaPos(), geom->phiPos());
+            //if (tmpdr>0.3) cout<<"--------------!!!-------- dR = "<<tmpdr<<endl;
+
+            iEta[nPhotons_].push_back(DidEB->ieta());
+            iPhi[nPhotons_].push_back(DidEB->iphi());
+            Hit_Eta[nPhotons_].push_back(geom->etaPos());
+            Hit_Phi[nPhotons_].push_back(geom->phiPos());
+            Hit_X[nPhotons_].push_back(geom->getPosition().x());
+            Hit_Y[nPhotons_].push_back(geom->getPosition().y());
+            Hit_Z[nPhotons_].push_back(geom->getPosition().z());
+
+            RecHitEn[nPhotons_].push_back(oneHit->energy());
+            RecHitFrac[nPhotons_].push_back(-1); // fraction does not apply to hits outside the cluster
+
+            if(oneHit->checkFlag(EcalRecHit::kGood))	RecHitQuality[nPhotons_].push_back(1);
+            else RecHitQuality[nPhotons_].push_back(0);
+
+            for (int iflag=0; iflag<EcalRecHit::kHasSwitchToGain1+1; iflag++){
+               RecHitFlag_container[iflag][nPhotons_].push_back(oneHit->checkFlag(iflag));
+            }
+
+            if (DEBUG) cout<<endl<<" Reco Flags = "<<oneHit->recoFlag()<<endl;
+
+            if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) 		RecHitGain[nPhotons_].push_back(6);
+            else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1)) RecHitGain[nPhotons_].push_back(1);
+            else RecHitGain[nPhotons_].push_back(12);
+            HitNoise[nPhotons_].push_back(_ped->find(detitr)->rms(1));
+         }
+      }    
+
+      // EE region outer hits
+      if (useOuterHits_ && isEE){
+
+         DidEE = new EEDetId(seedRawId);
+         int eextalid = DidEE->hashedIndex(); 
+         shared_ptr<const CaloCellGeometry> geom = ecalEEGeom->getGeometry(seedRawId);
+         seed_eta = geom->etaPos();
+         seed_phi = geom->phiPos();
+
+         // Get list of all neighbouring xtals to the seed
+         auto uncheckedXtals = eenxtals[eextalid];
+
+         for (unsigned int ixtal=0; ixtal<uncheckedXtals.size(); ixtal++){
+
+            if (std::find(EEHitsAndFractions.begin(),
+                     EEHitsAndFractions.end(),
+                     uncheckedXtals[ixtal])!=EEHitsAndFractions.end()) continue;
+
+            EEDetId detitr = EEDetId::unhashIndex(uncheckedXtals[ixtal]); // covert from hash to EEDetId
+            DetId Did   = detitr.rawId();
+            DidEE = new EEDetId(Did);
+
+            shared_ptr<const CaloCellGeometry> geom = ecalEEGeom->getGeometry(Did);
+            oneHit = recHitsEE->find(detitr) ;
+
+            if (oneHit==recHitsEE->end()) continue;
+            //cout<<"detitr = "<<detitr<<", xtal = "<<uncheckedXtals[ixtal]<<endl;
+            //float tmpdr = reco::deltaR(seed_eta, seed_phi, geom->etaPos(), geom->phiPos());
+            //if (tmpdr>0.3) cout<<"--------------!!!-------- dR = "<<tmpdr<<endl;
+
+            iEta[nPhotons_].push_back(DidEE->ix());
+            iPhi[nPhotons_].push_back(DidEE->iy());
+            Hit_Eta[nPhotons_].push_back(geom->etaPos());
+            Hit_Phi[nPhotons_].push_back(geom->phiPos());
+            Hit_X[nPhotons_].push_back(geom->getPosition().x());
+            Hit_Y[nPhotons_].push_back(geom->getPosition().y());
+            Hit_Z[nPhotons_].push_back(geom->getPosition().z());
+
+            RecHitEn[nPhotons_].push_back(oneHit->energy());
+            RecHitFrac[nPhotons_].push_back(-1);
+
+            if(oneHit->checkFlag(EcalRecHit::kGood))	RecHitQuality[nPhotons_].push_back(1);
+            else RecHitQuality[nPhotons_].push_back(0);
+
+            for (int iflag=0; iflag<EcalRecHit::kHasSwitchToGain1+1; iflag++){
+               RecHitFlag_container[iflag][nPhotons_].push_back(oneHit->checkFlag(iflag));
+            }
+
+            //if (DEBUG) cout<<endl<<" Reco Flags = "<<oneHit->recoFlag()<<endl;
+
+            if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) 		RecHitGain[nPhotons_].push_back(6);
+            else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1)) RecHitGain[nPhotons_].push_back(1);
+            else RecHitGain[nPhotons_].push_back(12);
+            HitNoise[nPhotons_].push_back(_ped->find(detitr)->rms(1));
+         }
+
+      }
+
+      // Add preshower hits
       if(isEE){
          GetESPlaneRecHits(*sc, geo, nPhotons_, 1);     
          GetESPlaneRecHits(*sc, geo, nPhotons_, 2);
@@ -445,7 +424,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       Pho_SCEtaW.push_back(sc->etaWidth());
       Pho_SCPhiW.push_back(sc->phiWidth());
       Pho_HadOverEm.push_back(pho->hadronicOverEm());
-      const CaloClusterPtr seed_clu = sc->seed();
+
       //        if (!seed_clu) continue;
       //        Pho_CovIEtaIEta.push_back(clustertools_NoZS->localCovariances(*seed_clu)[0]);
       //        Pho_CovIEtaIPhi.push_back(clustertools_NoZS->localCovariances(*seed_clu)[1]);
@@ -454,37 +433,48 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       Pho_SC_ESEnByRawE.push_back( (sc->preshowerEnergy())/(sc->rawEnergy()) );
       //        Pho_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
 
-      ////// Look up and save the ID decisions
-      //        bool isPassMedium = (*medium_id_decisions)[pho];
-      //        bool isPassTight  = (*tight_id_decisions)[pho];
-      //        passMediumId_.push_back( (int) isPassMedium);
-      //        passTightId_.push_back ( (int) isPassTight );
+      // Fill Isolation variables
+      Pho_PFChIso.push_back(pho->photonIso());
+      Pho_PFChPVIso.push_back(pho->chargedHadronPFPVIso());
+      Pho_PFPhoIso.push_back(pho->chargedHadronIso());
+      Pho_PFNeuIso.push_back(pho->neutralHadronIso());
+      Pho_PFChWorstVetoIso.push_back(pho->chargedHadronWorstVtxGeomVetoIso());
+      Pho_PFChWorstIso.push_back(pho->chargedHadronWorstVtxIso());
+      Pho_EcalPFClusterIso.push_back(pho->ecalPFClusterIso());
+      Pho_HcalPFClusterIso.push_back(pho->hcalPFClusterIso());
+
+      Pho_cluster_seed_x.push_back(seed_pos.x());
+      Pho_cluster_seed_y.push_back(seed_pos.y());
+      Pho_cluster_seed_z.push_back(seed_pos.z());
+
+      Pho_cluster_seed_eta.push_back(seed_eta);
+      Pho_cluster_seed_phi.push_back(seed_phi);
+
+      Pho_CorrectedEnergy.push_back(pho->getCorrectedEnergy(pho->getCandidateP4type()));
+      Pho_CorrectedEnergyError.push_back(pho->getCorrectedEnergyError(pho->getCandidateP4type())); // Error in corrected energy
 
    }
 
-   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
    //////////////////////// Gen Stuff hardcaded for status 1 photons for now /////////////////////////////////////
-
-   for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
-      if( part->status()==1  && abs(part->pdgId())==22 ){
-         Pho_Gen_Pt.push_back(part->pt());
-         Pho_Gen_Eta.push_back(part->eta());
-         Pho_Gen_Phi.push_back(part->phi());
-         Pho_Gen_E.push_back(part->energy());
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   if (isMC_){
+      for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
+         if( part->status()==1  && abs(part->pdgId())==22 ){
+            Pho_Gen_Pt.push_back(part->pt());
+            Pho_Gen_Eta.push_back(part->eta());
+            Pho_Gen_Phi.push_back(part->phi());
+            Pho_Gen_E.push_back(part->energy());
+         }
       }
    }
 
    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////// Run, event, lumi //////////////////////////////////
 
-   /////////////////////////Run, event, lumi//////////////////////////////////
    run=iEvent.id().run();
    event=iEvent.id().event();
    lumi=iEvent.luminosityBlock();
-   ///////////////////////////////////////////////////////////////////////////
-
-
 
    T->Fill(); // Write out the events
    delete clustertools_NoZS;
@@ -500,6 +490,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
    void
 Photon_RefinedRecHit_NTuplizer::beginJob()
 {
+
    edm::Service<TFileService> fs;
    T=fs->make<TTree>("T","MyTuple");
    T->Branch("iEtaPho1"  ,  &(iEta[0]));
@@ -618,6 +609,13 @@ Photon_RefinedRecHit_NTuplizer::beginJob()
    T->Branch("pt"  ,  &Pho_pt_);
    T->Branch("eta" ,  &Pho_eta_ );
    T->Branch("phi" ,  &Pho_phi_ );
+
+   T->Branch("Pho_cluster_seed_x", &Pho_cluster_seed_x);
+   T->Branch("Pho_cluster_seed_y", &Pho_cluster_seed_y);
+   T->Branch("Pho_cluster_seed_z", &Pho_cluster_seed_z);
+   T->Branch("Pho_cluster_seed_eta", &Pho_cluster_seed_eta);
+   T->Branch("Pho_cluster_seed_phi", &Pho_cluster_seed_phi);
+
    T->Branch("energy", &Pho_energy_);
    T->Branch("energy_ecal_mustache", &Pho_ecal_mustache_energy_);
 
@@ -638,10 +636,24 @@ Photon_RefinedRecHit_NTuplizer::beginJob()
    T->Branch("Pho_SC_ESEnByRawE"  ,  &Pho_SC_ESEnByRawE);
    T->Branch("Pho_HadOverEm"  ,  &Pho_HadOverEm);
 
-   T->Branch("Pho_Gen_Pt" , &Pho_Gen_Pt);
-   T->Branch("Pho_Gen_Eta" , &Pho_Gen_Eta);
-   T->Branch("Pho_Gen_Phi" , &Pho_Gen_Phi);
-   T->Branch("Pho_Gen_E" , &Pho_Gen_E);
+   T->Branch("Pho_PFChIso"	,	&Pho_PFChIso);
+   T->Branch("Pho_PFChPVIso"	,	&Pho_PFChPVIso);
+   T->Branch("Pho_PFPhoIso"	,	&Pho_PFPhoIso);
+   T->Branch("Pho_PFNeuIso"	,	&Pho_PFNeuIso);
+   T->Branch("Pho_PFChWorstVetoIso"	,	&Pho_PFChWorstVetoIso);
+   T->Branch("Pho_PFChWorstIso"	,	&Pho_PFChWorstIso);
+   T->Branch("Pho_EcalPFClusterIso"	,	&Pho_EcalPFClusterIso);
+   T->Branch("Pho_HcalPFClusterIso"	,	 &Pho_HcalPFClusterIso);
+
+   T->Branch("Pho_CorrectedEnergy", &Pho_CorrectedEnergy); // Add corrected energy for photon 
+   T->Branch("Pho_CorrectedEnergyError", &Pho_CorrectedEnergyError); //Error in energy correction
+
+   if (isMC_){
+      T->Branch("Pho_Gen_Pt" , &Pho_Gen_Pt);
+      T->Branch("Pho_Gen_Eta" , &Pho_Gen_Eta);
+      T->Branch("Pho_Gen_Phi" , &Pho_Gen_Phi);
+      T->Branch("Pho_Gen_E" , &Pho_Gen_E);
+   }
 
    T->Branch("rho", &rho, "rho/F");
 
@@ -729,14 +741,12 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
    iEta[0].clear();
    iPhi[0].clear();
 
-
    Hit_ES_Eta[0].clear();
    Hit_ES_Phi[0].clear();
    Hit_ES_X[0].clear();
    Hit_ES_Y[0].clear();
    Hit_ES_Z[0].clear();
    ES_RecHitEn[0].clear();
-
 
    Hit_Eta[0].clear();
    Hit_Phi[0].clear();
@@ -844,6 +854,13 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
    Pho_pt_.clear();
    Pho_eta_.clear();
    Pho_phi_.clear();
+
+   Pho_cluster_seed_x.clear();
+   Pho_cluster_seed_y.clear();
+   Pho_cluster_seed_z.clear();
+   Pho_cluster_seed_eta.clear();
+   Pho_cluster_seed_phi.clear();
+
    Pho_energy_.clear();
    Pho_ecal_mustache_energy_.clear();
    Pho_R9.clear();
@@ -859,10 +876,24 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
    Pho_SC_ESEnByRawE.clear();
    Pho_HadOverEm.clear();
 
-   Pho_Gen_Pt.clear();
-   Pho_Gen_Eta.clear();
-   Pho_Gen_Phi.clear();
-   Pho_Gen_E.clear();
+   Pho_PFChIso.clear();
+   Pho_PFChPVIso.clear();
+   Pho_PFPhoIso.clear();
+   Pho_PFNeuIso.clear();
+   Pho_PFChWorstVetoIso.clear();
+   Pho_PFChWorstIso.clear();
+   Pho_EcalPFClusterIso.clear();
+   Pho_HcalPFClusterIso.clear();
+
+   Pho_CorrectedEnergy.clear();
+   Pho_CorrectedEnergyError.clear();
+
+   if (isMC_){
+      Pho_Gen_Pt.clear();
+      Pho_Gen_Eta.clear();
+      Pho_Gen_Phi.clear();
+      Pho_Gen_E.clear();
+   }
 
    passMediumId_.clear();
    passTightId_ .clear();

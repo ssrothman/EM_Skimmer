@@ -28,12 +28,15 @@ config.JobType.maxJobRuntimeMin = <MaxJobRunTime>
 #config.JobType.sendPythonFolder = True
 
 config.Data.inputDataset  = <InputDataset>
+config.Data.allowNonValidInputDataset = True
+config.Data.lumiMask = <JSON>
 
 config.Data.inputDBS      = <InputDBS>
 config.Data.splitting     = <Splitting> #'LumiBased' / 'FileBased'
 config.Data.unitsPerJob   = <UnitsPerJob> #30000
 config.Data.outLFNDirBase = <FilePath>
 config.Data.publication   = False
+config.Data.allowNonValidInputDataset = True
 
 # GRID
 config.Site.storageSite   = <StorageSite>

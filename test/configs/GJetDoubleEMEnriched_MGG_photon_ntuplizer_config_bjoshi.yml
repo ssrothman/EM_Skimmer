@@ -6,7 +6,7 @@ OutputFile:
   - 'GammaRecHits_ntuple.root'
 TransferOutputs: True
 TransferLogs: True
-PsetName: 'Photon_RecHit_AOD_cfg.py'
+PsetName: 'Photon_RecHit_AODSIM_cfg.py'
 MaxJobRunTime: 2750
 InputDBS: 'global'
 Splitting: 'FileBased'
