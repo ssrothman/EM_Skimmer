@@ -95,7 +95,8 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-      void readLUTables();
+      void readROOTLUTables();
+      void readXMLLUTables();
       std::vector<int> getDiffArray(std::vector<int>&, std::vector<int>&);
 
 
@@ -141,8 +142,8 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
 
       // ----------member data ---------------------------
       bool isMC_, miniAODRun_, useOuterHits_;
-      std::string ebNeighbourXtalMap_;
-      std::string eeNeighbourXtalMap_;
+      edm::FileInPath ebNeighbourXtalMap_;
+      edm::FileInPath eeNeighbourXtalMap_;
       
       TTree* T;
    
@@ -262,6 +263,9 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
       std::vector<float> Pho_cluster_seed_y;
       std::vector<float> Pho_cluster_seed_z;
 
+      std::vector<float> Pho_cluster_seed_eta;
+      std::vector<float> Pho_cluster_seed_phi;
+
       std::vector<float> Pho_energy_;
       std::vector<float> Pho_ecal_mustache_energy_;
 
@@ -289,6 +293,7 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
       vector<float>  Pho_EcalPFClusterIso;
       vector<float>  Pho_HcalPFClusterIso;
 
+      vector<float> Pho_CorrectedEnergy;
       vector<float> Pho_CorrectedEnergyError;
 
       std::vector<float> Pho_Gen_Pt;

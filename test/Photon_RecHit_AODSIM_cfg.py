@@ -7,7 +7,7 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 
 process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(2500)
 
@@ -30,7 +30,8 @@ process.source = cms.Source("PoolSource",
                                 fileNames = cms.untracked.vstring(
                                 #    'root://cms-xrd-global.cern.ch//store/data/Run2018A/EGamma/AOD/12Nov2019_UL2018-v2/710000/B43485A1-DA02-2747-8BD5-C1E17313CC27.root'
                                 #'root://cms-xrd-global.cern.ch//store/mc/RunIISummer20UL18RECO/DoublePhoton_Pt-5To300-gun/AODSIM/FlatPU0to70EdalIdealGT_EdalIdealGT_106X_upgrade2018_realistic_v11_L1v1_EcalIdealIC-v2/280000/DA55E6E8-8F95-CE4C-9FB9-8393ECE23A09.root'
-                                'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20toInf_DoubleEMEnriched_MGG-40to80_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v2/10000/755C8490-4B61-E648-8984-4ED4CF3D3873.root'
+                                #'root://cms-xrd-global.cern.ch//store/mc/RunIISummer20UL18RECO/GluGluHToGG_M-125_TuneCP5_13TeV-powheg-pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v2/40000/9DAAC020-4F79-6641-B3C4-A48EBECECED5.root'
+                                'root://cms-xrd-global.cern.ch:1094//store/mc/RunIISummer20UL18RECO/GluGluHToGG_M-125_TuneCP5_13TeV-powheg-pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v2/40000/418EDE70-2DF3-714A-8436-71F580A9ED86.root'
                                 )
                             )
 
@@ -53,7 +54,7 @@ for idmod in my_id_modules:
 process.nTuplelize = cms.EDAnalyzer('Photon_RefinedRecHit_NTuplizer',
         isMC = cms.bool(True),
         miniAODRun = cms.bool(False),
-        useOuterHits = cms.bool(True),
+        useOuterHits = cms.bool(False),
         rhoFastJet = cms.InputTag("fixedGridRhoFastjetAll"),
         photons = cms.InputTag("gedPhotons"),
         genParticles = cms.InputTag("genParticles"),
@@ -64,8 +65,8 @@ process.nTuplelize = cms.EDAnalyzer('Photon_RefinedRecHit_NTuplizer',
         eeebClusters = cms.InputTag("particleFlowEGamma:EBEEClusters:RECO"),
         esClusters = cms.InputTag("particleFlowEGamma:ESClusters:RECO"),
 
-        ebNeighbourXtalMap = cms.string("../data/EB_xtal_dR0p3_map.xml"),
-        eeNeighbourXtalMap = cms.string("../data/EE_xtal_dR0p3_map.xml")
+        ebNeighbourXtalMap = cms.FileInPath("EM_GNN_ID/EM_Skimmer/data/EB_xtal_dR0p3_map.root"),
+        eeNeighbourXtalMap = cms.FileInPath("EM_GNN_ID/EM_Skimmer/data/EE_xtal_dR0p3_map.root")
 	)
 
 

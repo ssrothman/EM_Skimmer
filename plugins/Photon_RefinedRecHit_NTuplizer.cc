@@ -20,14 +20,15 @@ Photon_RefinedRecHit_NTuplizer::Photon_RefinedRecHit_NTuplizer(const edm::Parame
    isMC_ = iConfig.getParameter<bool>("isMC");
    miniAODRun_ = iConfig.getParameter<bool>("miniAODRun");
    useOuterHits_ = iConfig.getParameter<bool>("useOuterHits");
-   ebNeighbourXtalMap_ = iConfig.getParameter<std::string>("ebNeighbourXtalMap");
-   eeNeighbourXtalMap_ = iConfig.getParameter<std::string>("eeNeighbourXtalMap");
+   ebNeighbourXtalMap_ = iConfig.getParameter<edm::FileInPath>("ebNeighbourXtalMap");
+   eeNeighbourXtalMap_ = iConfig.getParameter<edm::FileInPath>("eeNeighbourXtalMap");
 
    photonsToken_ = mayConsume<edm::View<reco::Photon> >(iConfig.getParameter<edm::InputTag>("photons"));
    genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("genParticles"));
    usesResource("TFileService");
 
-   if (useOuterHits_) readLUTables(); // read look up tables (dR = 0.3 for now)
+   //if (useOuterHits_) readLUTables(); // read look up tables (dR = 0.3 for now)
+   if (useOuterHits_) readROOTLUTables(); // read look up tables (dR = 0.3 for now)
 
 }
 
@@ -44,14 +45,49 @@ Photon_RefinedRecHit_NTuplizer::~Photon_RefinedRecHit_NTuplizer()
 //
 
 // Method to load look up tables
+void Photon_RefinedRecHit_NTuplizer::readROOTLUTables(){
+   int id;
+   vector<int>* nids;
+
+   nids = 0;
+
+   TFile* file_eb = new TFile(ebNeighbourXtalMap_.fullPath().c_str(), "read");
+   TFile* file_ee = new TFile(eeNeighbourXtalMap_.fullPath().c_str(), "read");
+
+   TTree* tree_eb = (TTree*)file_eb->Get("xtal_map");
+   TTree* tree_ee = (TTree*)file_ee->Get("xtal_map");
+
+   tree_eb->SetBranchAddress("id", &id);
+   tree_eb->SetBranchAddress("nids", &nids);
+
+   for (int ientry=0; ientry<tree_eb->GetEntriesFast(); ientry++){
+      tree_eb->GetEntry(ientry);
+      ebnxtals.insert({id, nids[0]});
+   }
+   
+   tree_ee->SetBranchAddress("id", &id);
+   tree_ee->SetBranchAddress("nids", &nids);
+
+   for (int ientry=0; ientry<tree_ee->GetEntriesFast(); ientry++){
+      tree_ee->GetEntry(ientry);
+      eenxtals.insert({id, nids[0]});
+   }
+
+   file_eb->Close();
+   file_ee->Close();
+
+}
+
+// Method to load look up tables from xml files
 void
-Photon_RefinedRecHit_NTuplizer::readLUTables(){
+Photon_RefinedRecHit_NTuplizer::readXMLLUTables(){
+
 
    // load EE and EB maps (dR = 0.3)
    TXMLEngine xml;
 
-   XMLDocPointer_t xmldoc_eb = xml.ParseFile(ebNeighbourXtalMap_.c_str());
-   XMLDocPointer_t xmldoc_ee = xml.ParseFile(eeNeighbourXtalMap_.c_str());
+   XMLDocPointer_t xmldoc_eb = xml.ParseFile(ebNeighbourXtalMap_.fullPath().c_str());
+   XMLDocPointer_t xmldoc_ee = xml.ParseFile(eeNeighbourXtalMap_.fullPath().c_str());
 
    XMLNodePointer_t root_node_eb = xml.DocGetRootElement(xmldoc_eb);
    XMLNodePointer_t root_node_ee = xml.DocGetRootElement(xmldoc_ee);
@@ -246,23 +282,22 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
          else RecHitGain[nPhotons_].push_back(12);
          HitNoise[nPhotons_].push_back(_ped->find(detitr.first)->rms(1));
       }
-      
-      //cout<<"*** *** ***"<<endl;
-      //cout<<"*** outer hits ***"<<endl;
 
       // Get the cluster seed
       const CaloClusterPtr seed_clu = sc->seed();
       const math::XYZPoint seed_pos = seed_clu->position();
       DetId seedRawId = (seed_clu->seed()).rawId();
-      
+      float seed_eta=-99.;
+      float seed_phi=-99.;
+
       // Add the rechits within (dR==0.3 for now)
       // EB region outer hits
       if (useOuterHits_ && isEB){
 
          DidEB = new EBDetId(seedRawId);
          shared_ptr<const CaloCellGeometry> geom = ecalEBGeom->getGeometry(seedRawId);
-         float seed_ieta = geom->etaPos();
-         float seed_iphi = geom->phiPos();
+         seed_eta = geom->etaPos();
+         seed_phi = geom->phiPos();
 
          // Get list of all neighboutring xtals to the seed
          auto uncheckedXtals = ebnxtals[DidEB->numberByEtaPhi()];
@@ -270,22 +305,22 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
          for (unsigned int ixtal=0; ixtal<uncheckedXtals.size(); ixtal++){
 
             if (std::find(EBHitsAndFractions.begin(),
-                          EBHitsAndFractions.end(),
-                          uncheckedXtals[ixtal])!=EBHitsAndFractions.end()) continue;
+                     EBHitsAndFractions.end(),
+                     uncheckedXtals[ixtal])!=EBHitsAndFractions.end()) continue;
 
             EBDetId detitr = EBDetId::unhashIndex(uncheckedXtals[ixtal]); // covert from hash to EBDetId
             DetId Did   = detitr.rawId();
             DidEB = new EBDetId(Did);
-            
+
             shared_ptr<const CaloCellGeometry> geom = ecalEBGeom->getGeometry(Did);
             oneHit = recHitsEB->find(detitr) ;
-            
+
             if (oneHit==recHitsEB->end()) continue;
-            
+
             //cout<<"detitr = "<<detitr<<endl;
             //float tmpdr = reco::deltaR(seed_ieta, seed_iphi, geom->etaPos(), geom->phiPos());
             //if (tmpdr>0.3) cout<<"--------------!!!-------- dR = "<<tmpdr<<endl;
-            
+
             iEta[nPhotons_].push_back(DidEB->ieta());
             iPhi[nPhotons_].push_back(DidEB->iphi());
             Hit_Eta[nPhotons_].push_back(geom->etaPos());
@@ -293,10 +328,10 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
             Hit_X[nPhotons_].push_back(geom->getPosition().x());
             Hit_Y[nPhotons_].push_back(geom->getPosition().y());
             Hit_Z[nPhotons_].push_back(geom->getPosition().z());
-            
+
             RecHitEn[nPhotons_].push_back(oneHit->energy());
             RecHitFrac[nPhotons_].push_back(-1); // fraction does not apply to hits outside the cluster
-            
+
             if(oneHit->checkFlag(EcalRecHit::kGood))	RecHitQuality[nPhotons_].push_back(1);
             else RecHitQuality[nPhotons_].push_back(0);
 
@@ -316,11 +351,11 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       // EE region outer hits
       if (useOuterHits_ && isEE){
 
-          DidEE = new EEDetId(seedRawId);
-          int eextalid = DidEE->hashedIndex(); 
-          shared_ptr<const CaloCellGeometry> geom = ecalEEGeom->getGeometry(seedRawId);
-          float seed_eta = geom->etaPos();
-          float seed_phi = geom->phiPos();
+         DidEE = new EEDetId(seedRawId);
+         int eextalid = DidEE->hashedIndex(); 
+         shared_ptr<const CaloCellGeometry> geom = ecalEEGeom->getGeometry(seedRawId);
+         seed_eta = geom->etaPos();
+         seed_phi = geom->phiPos();
 
          // Get list of all neighbouring xtals to the seed
          auto uncheckedXtals = eenxtals[eextalid];
@@ -328,21 +363,21 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
          for (unsigned int ixtal=0; ixtal<uncheckedXtals.size(); ixtal++){
 
             if (std::find(EEHitsAndFractions.begin(),
-                          EEHitsAndFractions.end(),
-                          uncheckedXtals[ixtal])!=EEHitsAndFractions.end()) continue;
-            
+                     EEHitsAndFractions.end(),
+                     uncheckedXtals[ixtal])!=EEHitsAndFractions.end()) continue;
+
             EEDetId detitr = EEDetId::unhashIndex(uncheckedXtals[ixtal]); // covert from hash to EEDetId
             DetId Did   = detitr.rawId();
             DidEE = new EEDetId(Did);
 
             shared_ptr<const CaloCellGeometry> geom = ecalEEGeom->getGeometry(Did);
             oneHit = recHitsEE->find(detitr) ;
-            
+
             if (oneHit==recHitsEE->end()) continue;
             //cout<<"detitr = "<<detitr<<", xtal = "<<uncheckedXtals[ixtal]<<endl;
             //float tmpdr = reco::deltaR(seed_eta, seed_phi, geom->etaPos(), geom->phiPos());
             //if (tmpdr>0.3) cout<<"--------------!!!-------- dR = "<<tmpdr<<endl;
-            
+
             iEta[nPhotons_].push_back(DidEE->ix());
             iPhi[nPhotons_].push_back(DidEE->iy());
             Hit_Eta[nPhotons_].push_back(geom->etaPos());
@@ -350,10 +385,10 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
             Hit_X[nPhotons_].push_back(geom->getPosition().x());
             Hit_Y[nPhotons_].push_back(geom->getPosition().y());
             Hit_Z[nPhotons_].push_back(geom->getPosition().z());
-            
+
             RecHitEn[nPhotons_].push_back(oneHit->energy());
             RecHitFrac[nPhotons_].push_back(-1);
-            
+
             if(oneHit->checkFlag(EcalRecHit::kGood))	RecHitQuality[nPhotons_].push_back(1);
             else RecHitQuality[nPhotons_].push_back(0);
 
@@ -390,7 +425,6 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       Pho_SCPhiW.push_back(sc->phiWidth());
       Pho_HadOverEm.push_back(pho->hadronicOverEm());
 
-      const CaloClusterPtr seed_clu = sc->seed();
       //        if (!seed_clu) continue;
       //        Pho_CovIEtaIEta.push_back(clustertools_NoZS->localCovariances(*seed_clu)[0]);
       //        Pho_CovIEtaIPhi.push_back(clustertools_NoZS->localCovariances(*seed_clu)[1]);
@@ -413,20 +447,12 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       Pho_cluster_seed_y.push_back(seed_pos.y());
       Pho_cluster_seed_z.push_back(seed_pos.z());
 
+      Pho_cluster_seed_eta.push_back(seed_eta);
+      Pho_cluster_seed_phi.push_back(seed_phi);
+
+      Pho_CorrectedEnergy.push_back(pho->getCorrectedEnergy(pho->getCandidateP4type()));
       Pho_CorrectedEnergyError.push_back(pho->getCorrectedEnergyError(pho->getCandidateP4type())); // Error in corrected energy
 
-      // if (!seed_clu) continue;
-      // Pho_CovIEtaIEta.push_back(clustertools_NoZS->localCovariances(*seed_clu)[0]);
-      // Pho_CovIEtaIPhi.push_back(clustertools_NoZS->localCovariances(*seed_clu)[1]);
-      //	Pho_ESSigRR.push_back(clustertools->eseffsirir( *(sc) ) );
-      Pho_SCRawE.push_back(sc->rawEnergy());
-      Pho_SC_ESEnByRawE.push_back( (sc->preshowerEnergy())/(sc->rawEnergy()) );
-      // Pho_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
-      ////// Look up and save the ID decisions
-      // bool isPassMedium = (*medium_id_decisions)[pho];
-      // bool isPassTight  = (*tight_id_decisions)[pho];
-      // passMediumId_.push_back( (int) isPassMedium);
-      // passTightId_.push_back ( (int) isPassTight );
    }
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -445,11 +471,11 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 
    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    ///////////////////////// Run, event, lumi //////////////////////////////////
-   
+
    run=iEvent.id().run();
    event=iEvent.id().event();
    lumi=iEvent.luminosityBlock();
-   
+
    T->Fill(); // Write out the events
    delete clustertools_NoZS;
 
@@ -583,9 +609,13 @@ Photon_RefinedRecHit_NTuplizer::beginJob()
    T->Branch("pt"  ,  &Pho_pt_);
    T->Branch("eta" ,  &Pho_eta_ );
    T->Branch("phi" ,  &Pho_phi_ );
+
    T->Branch("Pho_cluster_seed_x", &Pho_cluster_seed_x);
    T->Branch("Pho_cluster_seed_y", &Pho_cluster_seed_y);
    T->Branch("Pho_cluster_seed_z", &Pho_cluster_seed_z);
+   T->Branch("Pho_cluster_seed_eta", &Pho_cluster_seed_eta);
+   T->Branch("Pho_cluster_seed_phi", &Pho_cluster_seed_phi);
+
    T->Branch("energy", &Pho_energy_);
    T->Branch("energy_ecal_mustache", &Pho_ecal_mustache_energy_);
 
@@ -615,6 +645,7 @@ Photon_RefinedRecHit_NTuplizer::beginJob()
    T->Branch("Pho_EcalPFClusterIso"	,	&Pho_EcalPFClusterIso);
    T->Branch("Pho_HcalPFClusterIso"	,	 &Pho_HcalPFClusterIso);
 
+   T->Branch("Pho_CorrectedEnergy", &Pho_CorrectedEnergy); // Add corrected energy for photon 
    T->Branch("Pho_CorrectedEnergyError", &Pho_CorrectedEnergyError); //Error in energy correction
 
    if (isMC_){
@@ -710,14 +741,12 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
    iEta[0].clear();
    iPhi[0].clear();
 
-
    Hit_ES_Eta[0].clear();
    Hit_ES_Phi[0].clear();
    Hit_ES_X[0].clear();
    Hit_ES_Y[0].clear();
    Hit_ES_Z[0].clear();
    ES_RecHitEn[0].clear();
-
 
    Hit_Eta[0].clear();
    Hit_Phi[0].clear();
@@ -829,6 +858,8 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
    Pho_cluster_seed_x.clear();
    Pho_cluster_seed_y.clear();
    Pho_cluster_seed_z.clear();
+   Pho_cluster_seed_eta.clear();
+   Pho_cluster_seed_phi.clear();
 
    Pho_energy_.clear();
    Pho_ecal_mustache_energy_.clear();
@@ -854,6 +885,7 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
    Pho_EcalPFClusterIso.clear();
    Pho_HcalPFClusterIso.clear();
 
+   Pho_CorrectedEnergy.clear();
    Pho_CorrectedEnergyError.clear();
 
    if (isMC_){

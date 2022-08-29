@@ -81,7 +81,7 @@ class crab_job_manager():
                                 if '<{}>'.format(key_) in line:
                                     # If the key is InputDataset, use only one dataset at a time
                                     if 'InputDataset' in key_:
-                                        newline = 'config.Data.inputDataset\t= "{}"'.format(dataset)
+                                        newline = 'config.Data.inputDataset\t= "{}"\n'.format(dataset)
                                     # Check for the type of the parameter
                                     # If the parameter is a string replace it with a string
                                     # Else if it's a float or an integer or a list, convert to a string

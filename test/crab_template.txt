@@ -28,7 +28,7 @@ config.JobType.maxJobRuntimeMin = <MaxJobRunTime>
 #config.JobType.sendPythonFolder = True
 
 config.Data.inputDataset  = <InputDataset>
-
+config.Data.allowNonValidInputDataset = True
 config.Data.lumiMask = <JSON>
 
 config.Data.inputDBS      = <InputDBS>

@@ -4,11 +4,9 @@ import FWCore.ParameterSet.VarParsing as VarParsing
 process = cms.Process("Demo")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-
 process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
-
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(2500)
 
 options = VarParsing.VarParsing('standard')
@@ -47,7 +45,7 @@ switchOnVIDElectronIdProducer(process, dataFormat)
 
 
 # define which IDs we want to produce
-my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Fall17_iso_V2_cff']
+my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Fall17_94X_V2_cff']
 
 
 for idmod in my_id_modules:
@@ -57,11 +55,13 @@ process.nTuplelize = cms.EDAnalyzer('Electron_RefinedRecHit_NTuplizer',
         rhoFastJet = cms.InputTag("fixedGridRhoAll"),
         electrons = cms.InputTag("gedGsfElectrons"),
         genParticles = cms.InputTag("genParticles"),
+        refinedCluster = cms.bool(False),
         isMC = cms.bool(True), 
         miniAODRun = cms.bool(False),
         #MVA Based Id
-        eleMediumIdMap = cms.InputTag("egmGsfElectronIDs:mvaEleID_Fall17_iso_V2_wp90"),
-        eleTightIdMap = cms.InputTag("egmGsfElectronIDs:mvaEleID_Fall17_iso_V2_wp80")
+	eleLooseIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-loose"),
+        eleMediumIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-medium"),
+        eleTightIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-tight")
         )
 
 

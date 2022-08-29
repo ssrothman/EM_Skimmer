@@ -131,14 +131,16 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       void ClearTreeVectors();
 
       // ----------member data ---------------------------
-      bool isMC_, miniAODRun_;
-      
+      bool isMC_, miniAODRun_, refinedCluster_;
+
       TTree* T;
 
       // Variables for Run info.
       int run;
       int event;
       int lumi;
+
+      bool isRefinedSC;
 
       // Electron variables
       int nElectrons_;
@@ -240,6 +242,7 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       std::vector<float> Ele_eta_;
       std::vector<float> Ele_phi_;
       std::vector<float> Ele_energy_;
+      std::vector<float> Ele_energy_error_;
       std::vector<float> Ele_ecal_mustache_energy_;
 
       std::vector<float> Ele_R9;
@@ -254,6 +257,17 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       std::vector<float> Ele_SCRawE;
       std::vector<float> Ele_SC_ESEnByRawE;
       std::vector<float> Ele_HadOverEm;
+
+      // Electron Isolation Variables
+      vector<float> Ele_sumChargedHadronPt;
+      vector<float> Ele_sumChargedParticlePt;
+      vector<float> Ele_sumEcalClusterEt;
+      vector<float> Ele_sumHcalClusterEt;
+      vector<float> Ele_sumNeutralHadronEt;
+      vector<float> Ele_sumPhotonEt;
+      vector<float> Ele_sumPUPt;
+      vector<float>  Ele_EcalPFClusterIso;
+      vector<float>  Ele_HcalPFClusterIso;
 
       std::vector<float> Ele_Gen_Pt;
       std::vector<float> Ele_Gen_Eta;
@@ -274,6 +288,7 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       edm::Handle<EcalRecHitCollection> ESRechitsHandle;
       edm::Handle<edm::View<reco::GsfElectron> > electrons;
       edm::Handle<edm::View<reco::GenParticle> > genParticles;
+      edm::Handle<edm::ValueMap<bool> > loose_id_decisions;
       edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
       edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
       //---------------- Input Tags-----------------------
@@ -283,6 +298,7 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionESToken_;
       edm::EDGetToken electronsToken_;
       edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > eleLooseIdMapToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
 
