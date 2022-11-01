@@ -1,4 +1,4 @@
-#include "../interface/Photon_RefinedRecHit_NTuplizer.h"
+#include "../interface/Photon_RefinedRecHit_MiniAOD_NTuplizer.h"
 
 //using reco::TrackCollection;
 
@@ -7,35 +7,31 @@ using namespace edm;
 using namespace reco;
 using namespace pat;
 
-Photon_RefinedRecHit_NTuplizer::Photon_RefinedRecHit_NTuplizer(const edm::ParameterSet& iConfig):
+Photon_RefinedRecHit_MiniAOD_NTuplizer::Photon_RefinedRecHit_MiniAOD_NTuplizer(const edm::ParameterSet& iConfig):
+   recHitCollectionEBToken_(consumes<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > >(iConfig.getParameter<edm::InputTag>("ebRecHits"))),
+   recHitCollectionEEToken_(consumes<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > >(iConfig.getParameter<edm::InputTag>("eeRecHits"))),
+   recHitCollectionESToken_(consumes<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > >(iConfig.getParameter<edm::InputTag>("esRecHits"))),
    rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoFastJet"))),
-   recHitCollectionEBToken_(consumes<EcalRecHitCollection>(edm::InputTag("reducedEcalRecHitsEB"))),
-   recHitCollectionEEToken_(consumes<EcalRecHitCollection>(edm::InputTag("reducedEcalRecHitsEE"))),
-   recHitCollectionESToken_(consumes<EcalRecHitCollection>(edm::InputTag("reducedEcalRecHitsES"))),
    eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap"))),
    eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
 {
    //now do what ever initialization is needed
    DEBUG = iConfig.getParameter<bool>("debug");
    isMC_ = iConfig.getParameter<bool>("isMC");
-   miniAODRun_ = iConfig.getParameter<bool>("miniAODRun");
    useOuterHits_ = iConfig.getParameter<bool>("useOuterHits");
    ebNeighbourXtalMap_ = iConfig.getParameter<edm::FileInPath>("ebNeighbourXtalMap");
    eeNeighbourXtalMap_ = iConfig.getParameter<edm::FileInPath>("eeNeighbourXtalMap");
-
-   photonsToken_ = mayConsume<edm::View<reco::Photon> >(iConfig.getParameter<edm::InputTag>("photons"));
-   genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("genParticles"));
+   photonsToken_ = mayConsume<std::vector<pat::Photon> >(iConfig.getParameter<edm::InputTag>("photons"));
+   genParticlesToken_ = mayConsume<std::vector<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("genParticles"));
    usesResource("TFileService");
-
    //if (useOuterHits_) readLUTables(); // read look up tables (dR = 0.3 for now)
    if (useOuterHits_) readROOTLUTables(); // read look up tables (dR = 0.3 for now)
 
 }
 
 
-Photon_RefinedRecHit_NTuplizer::~Photon_RefinedRecHit_NTuplizer()
+Photon_RefinedRecHit_MiniAOD_NTuplizer::~Photon_RefinedRecHit_MiniAOD_NTuplizer()
 {
-
    // do anything here that needs to be done at desctruction time
    // (e.g. close files, deallocate resources etc.)
 }
@@ -45,7 +41,7 @@ Photon_RefinedRecHit_NTuplizer::~Photon_RefinedRecHit_NTuplizer()
 //
 
 // Method to load look up tables
-void Photon_RefinedRecHit_NTuplizer::readROOTLUTables(){
+void Photon_RefinedRecHit_MiniAOD_NTuplizer::readROOTLUTables(){
    int id;
    vector<int>* nids;
 
@@ -64,7 +60,7 @@ void Photon_RefinedRecHit_NTuplizer::readROOTLUTables(){
       tree_eb->GetEntry(ientry);
       ebnxtals.insert({id, nids[0]});
    }
-
+   
    tree_ee->SetBranchAddress("id", &id);
    tree_ee->SetBranchAddress("nids", &nids);
 
@@ -80,9 +76,10 @@ void Photon_RefinedRecHit_NTuplizer::readROOTLUTables(){
 
 // ------------ method called for each event  ------------
    void
-Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+Photon_RefinedRecHit_MiniAOD_NTuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
+   if (DEBUG) cout << "getting handles"<< endl;
    iEvent.getByToken(rhoToken_, rhoHandle);
    iEvent.getByToken(recHitCollectionEBToken_, EBRechitsHandle);
    iEvent.getByToken(recHitCollectionEEToken_, EERechitsHandle);
@@ -92,12 +89,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
    iEvent.getByToken(eleMediumIdMapToken_, medium_id_decisions);
    iEvent.getByToken(eleTightIdMapToken_ , tight_id_decisions);
 
-
-   // get maps
-   // getEBMapXML(iSetup);
-   // getEEMapXML(iSetup);
-
-
+   if (DEBUG) cout << "getting geometry"<< endl;
    ESHandle<CaloGeometry> pG;
    iSetup.get<CaloGeometryRecord>().get(pG);
    iSetup.get<EcalPedestalsRcd>().get(_ped);
@@ -109,13 +101,13 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
    rho = *rhoHandle;
    ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
    clustertools_NoZS = new noZS::EcalClusterLazyTools(iEvent, iSetup, recHitCollectionEBToken_, recHitCollectionEEToken_);
 
    //Clear all vectors to be written to the tree
    ClearTreeVectors();
    run=0;  event=0;  lumi=0;
 
+   if (DEBUG) cout << "getting cluters"<< endl;
    ///////////////////////////Fill Electron/Photon related stuff/////////////////////////////////////////////////////
    nPhotons_ = 0;
    const EcalRecHitCollection *recHitsEB = clustertools_NoZS->getEcalEBRecHitCollection();
@@ -123,12 +115,17 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 
    //cout<<"================ Event ==================="<<endl;
 
+   if (DEBUG) cout << "getting photons"<< endl;
    for (size_t i = 0; i < photons->size(); ++i){
       //cout<<"----------- Photon ------------"<<endl;
       if (nPhotons_ == 2) break;
-      const auto pho = photons->ptrAt(i);
-      if( pho->pt() < 10 ) continue;
-      const SuperClusterRef& sc = pho->superCluster(); 
+      
+      const auto pho = photons->at(i);
+
+      if( pho.pt() < 10 ) continue;
+   
+      if (DEBUG) cout << "getting photon superclusters"<< endl;
+      const SuperClusterRef& sc = pho.superCluster(); 
       //const SuperClusterRef& sc = pho->parentSuperCluster(); // mustache cluster
       std::vector< std::pair<DetId, float> > hitsAndFractions = sc->hitsAndFractions();
       isEB = ((*sc->seed()).hitsAndFractions().at(0).first.subdetId() == EcalBarrel);
@@ -143,6 +140,8 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       std::vector<int> EEHitsAndFractions;
 
       //cout<<"*** supercluster hits ***"<<endl;
+      
+      if (DEBUG) cout<<"Hits and Fractions"<<endl;
 
       for (const auto&  detitr : hitsAndFractions) {
          if(isEB){
@@ -160,7 +159,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 
             // Catalog the hits EB
             EBHitsAndFractions.push_back(DidEB->numberByEtaPhi());
-            //cout<<*DidEB<<endl;
+            if (DEBUG) cout<<*DidEB<<endl;
 
          }
 
@@ -179,7 +178,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 
             // Catalog the hits in EE
             EEHitsAndFractions.push_back(DidEE->hashedIndex());
-            //cout<<*DidEE<<endl;
+            if (DEBUG) cout<<*DidEE<<endl;
          }
 
          RecHitEn[nPhotons_].push_back(oneHit->energy());
@@ -198,11 +197,33 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
          else RecHitGain[nPhotons_].push_back(12);
          HitNoise[nPhotons_].push_back(_ped->find(detitr.first)->rms(1));
       }
+      
+      CaloClusterPtr seed_clu;
 
       // Get the cluster seed
-      const CaloClusterPtr seed_clu = sc->seed();
-      const math::XYZPoint seed_pos = seed_clu->position();
-      DetId seedRawId = (seed_clu->seed()).rawId();
+      if (DEBUG) cout<<"cluster seeds"<<endl;
+      try {
+         CaloClusterPtr seed_clu = sc->seed();
+      }
+      catch (...){
+         if (DEBUG) cout<<"Invalid cluster seed pointer!"<<endl;
+      }
+
+      
+      math::XYZPoint seed_pos;
+      DetId seedRawId;
+
+      if (!seed_clu.isNull()){
+         seed_pos = seed_clu->position();
+         seedRawId = (seed_clu->seed()).rawId();
+      }
+      else {
+         seed_pos = math::XYZPoint(-999.,-999.,-999.);
+         seedRawId = DetId();
+      }
+
+      if (DEBUG) cout<<seed_pos<<endl;
+
       float seed_eta=-99.;
       float seed_phi=-99.;
 
@@ -255,7 +276,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
                RecHitFlag_container[iflag][nPhotons_].push_back(oneHit->checkFlag(iflag));
             }
 
-            if (DEBUG) cout<<endl<<" Reco Flags = "<<oneHit->recoFlag()<<endl;
+            if (DEBUG) cout<<endl<<" (Outer Hits EB) Reco Flags = "<<oneHit->recoFlag()<<endl;
 
             if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) 		RecHitGain[nPhotons_].push_back(6);
             else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1)) RecHitGain[nPhotons_].push_back(1);
@@ -263,6 +284,9 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
             HitNoise[nPhotons_].push_back(_ped->find(detitr)->rms(1));
          }
       }    
+      else {
+         if (DEBUG) cout << "didn't use eb external hits" <<endl;
+      }
 
       // EE region outer hits
       if (useOuterHits_ && isEE){
@@ -290,7 +314,8 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
             oneHit = recHitsEE->find(detitr) ;
 
             if (oneHit==recHitsEE->end()) continue;
-            //cout<<"detitr = "<<detitr<<", xtal = "<<uncheckedXtals[ixtal]<<endl;
+            if (DEBUG) cout<<"detitr = "<<detitr<<", xtal = "<<uncheckedXtals[ixtal]<<endl;
+            
             //float tmpdr = reco::deltaR(seed_eta, seed_phi, geom->etaPos(), geom->phiPos());
             //if (tmpdr>0.3) cout<<"--------------!!!-------- dR = "<<tmpdr<<endl;
 
@@ -312,52 +337,59 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
                RecHitFlag_container[iflag][nPhotons_].push_back(oneHit->checkFlag(iflag));
             }
 
-            //if (DEBUG) cout<<endl<<" Reco Flags = "<<oneHit->recoFlag()<<endl;
+            if (DEBUG) cout<<endl<<" (Outer Hits EE) Reco Flags = "<<oneHit->recoFlag()<<endl;
 
             if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) 		RecHitGain[nPhotons_].push_back(6);
             else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1)) RecHitGain[nPhotons_].push_back(1);
             else RecHitGain[nPhotons_].push_back(12);
             HitNoise[nPhotons_].push_back(_ped->find(detitr)->rms(1));
          }
-
+      }
+      
+      else {
+         if (DEBUG) cout << "didn't use ee external hits" <<endl;
       }
 
       // Add preshower hits
+      if (DEBUG) cout<<"Getting ES plane hits"<<endl;
       if(isEE){
          GetESPlaneRecHits(*sc, geo, nPhotons_, 1);     
          GetESPlaneRecHits(*sc, geo, nPhotons_, 2);
       }
 
+      if (DEBUG) cout << "Filling Photon Variables" << endl;
+      if (DEBUG) cout<< sc->eta()<<endl;
+
       nPhotons_++;
-      Pho_pt_.push_back( pho->pt() );
+      Pho_pt_.push_back( pho.pt() );
       Pho_eta_.push_back( sc->eta() );
       Pho_phi_.push_back( sc->phi() );
-      Pho_energy_.push_back( pho->energy() );
+      Pho_energy_.push_back( pho.energy() );
       Pho_ecal_mustache_energy_.push_back( sc->energy() );
-      Pho_R9.push_back(pho->full5x5_r9());
-      Pho_SigIEIE.push_back(pho->full5x5_sigmaIetaIeta());
-      Pho_SigIPhiIPhi.push_back(pho->full5x5_showerShapeVariables().sigmaIphiIphi);
+      Pho_R9.push_back(pho.full5x5_r9());
+      Pho_SigIEIE.push_back(pho.full5x5_sigmaIetaIeta());
+      Pho_SigIPhiIPhi.push_back(pho.full5x5_showerShapeVariables().sigmaIphiIphi);
       Pho_SCEtaW.push_back(sc->etaWidth());
       Pho_SCPhiW.push_back(sc->phiWidth());
-      Pho_HadOverEm.push_back(pho->hadronicOverEm());
+      Pho_HadOverEm.push_back(pho.hadronicOverEm());
 
-      //        if (!seed_clu) continue;
-      //        Pho_CovIEtaIEta.push_back(clustertools_NoZS->localCovariances(*seed_clu)[0]);
-      //        Pho_CovIEtaIPhi.push_back(clustertools_NoZS->localCovariances(*seed_clu)[1]);
+      // if (!seed_clu) continue;
+      // Pho_CovIEtaIEta.push_back(clustertools_NoZS->localCovariances(*seed_clu)[0]);
+      // Pho_CovIEtaIPhi.push_back(clustertools_NoZS->localCovariances(*seed_clu)[1]);
       //	Pho_ESSigRR.push_back(clustertools->eseffsirir( *(sc) ) );
       Pho_SCRawE.push_back(sc->rawEnergy());
       Pho_SC_ESEnByRawE.push_back( (sc->preshowerEnergy())/(sc->rawEnergy()) );
-      //        Pho_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
+      // Pho_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
 
       // Fill Isolation variables
-      Pho_PFChIso.push_back(pho->photonIso());
-      Pho_PFChPVIso.push_back(pho->chargedHadronPFPVIso());
-      Pho_PFPhoIso.push_back(pho->chargedHadronIso());
-      Pho_PFNeuIso.push_back(pho->neutralHadronIso());
-      Pho_PFChWorstVetoIso.push_back(pho->chargedHadronWorstVtxGeomVetoIso());
-      Pho_PFChWorstIso.push_back(pho->chargedHadronWorstVtxIso());
-      Pho_EcalPFClusterIso.push_back(pho->ecalPFClusterIso());
-      Pho_HcalPFClusterIso.push_back(pho->hcalPFClusterIso());
+      Pho_PFChIso.push_back(pho.photonIso());
+      Pho_PFChPVIso.push_back(pho.chargedHadronPFPVIso());
+      Pho_PFPhoIso.push_back(pho.chargedHadronIso());
+      Pho_PFNeuIso.push_back(pho.neutralHadronIso());
+      Pho_PFChWorstVetoIso.push_back(pho.chargedHadronWorstVtxGeomVetoIso());
+      Pho_PFChWorstIso.push_back(pho.chargedHadronWorstVtxIso());
+      Pho_EcalPFClusterIso.push_back(pho.ecalPFClusterIso());
+      Pho_HcalPFClusterIso.push_back(pho.hcalPFClusterIso());
 
       Pho_cluster_seed_x.push_back(seed_pos.x());
       Pho_cluster_seed_y.push_back(seed_pos.y());
@@ -366,16 +398,19 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
       Pho_cluster_seed_eta.push_back(seed_eta);
       Pho_cluster_seed_phi.push_back(seed_phi);
 
-      Pho_CorrectedEnergy.push_back(pho->getCorrectedEnergy(pho->getCandidateP4type()));
-      Pho_CorrectedEnergyError.push_back(pho->getCorrectedEnergyError(pho->getCandidateP4type())); // Error in corrected energy
+      Pho_CorrectedEnergy.push_back(pho.getCorrectedEnergy(pho.getCandidateP4type()));
+      Pho_CorrectedEnergyError.push_back(pho.getCorrectedEnergyError(pho.getCandidateP4type())); // Error in corrected energy
+
 
    }
+   
+   if (DEBUG) cout << "Done Filling Photon Variables" << endl;
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
    //////////////////////// Gen Stuff hardcaded for status 1 photons for now /////////////////////////////////////
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
    if (isMC_){
-      for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
+      for(std::vector<pat::PackedGenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
          if( part->status()==1  && abs(part->pdgId())==22 ){
             Pho_Gen_Pt.push_back(part->pt());
             Pho_Gen_Eta.push_back(part->eta());
@@ -404,7 +439,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
 
 // ------------ method called once each job just before starting event loop  ------------
    void
-Photon_RefinedRecHit_NTuplizer::beginJob()
+Photon_RefinedRecHit_MiniAOD_NTuplizer::beginJob()
 {
 
    edm::Service<TFileService> fs;
@@ -581,13 +616,13 @@ Photon_RefinedRecHit_NTuplizer::beginJob()
 
 // ------------ method called once each job just after ending the event loop  ------------
    void
-Photon_RefinedRecHit_NTuplizer::endJob()
+Photon_RefinedRecHit_MiniAOD_NTuplizer::endJob()
 {
 }
 
 /*
 //Evaluate if the gen particle dR matched to a reco photon is also a photon
-bool Photon_RefinedRecHit_NTuplizer::GetGenMatchType(const reco::Photon& Photon, const reco::GenParticle& GenColl, int pdgId, double dRThresh){
+bool Photon_RefinedRecHit_MiniAOD_NTuplizer::GetGenMatchType(const reco::Photon& Photon, const reco::GenParticle& GenColl, int pdgId, double dRThresh){
 
 
 }
@@ -595,14 +630,14 @@ bool Photon_RefinedRecHit_NTuplizer::GetGenMatchType(const reco::Photon& Photon,
 
 
 // Extract the rechits of the SC from the ES layers
-void Photon_RefinedRecHit_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int phonum, unsigned int planeIndex) {
+void Photon_RefinedRecHit_MiniAOD_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int phonum, unsigned int planeIndex) {
    double RawenergyPlane = 0.;
    double pfRawenergyPlane = 0.;
-   //      if(!_ESRechitsHandle.isValid())
-   //              return RawenergyPlane;
+   // if(!_ESRechitsHandle.isValid())
+   //    return RawenergyPlane;
 
-   //        if (!sc.preshowerClusters().isAvailable()) //protection for miniAOD
-   //                break;
+   if (!sc.preshowerClusters().isAvailable()) //protection for miniAOD
+       return;
 
    int NumHits = 0;
 
@@ -612,12 +647,13 @@ void Photon_RefinedRecHit_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster&
    for(auto iES = sc.preshowerClustersBegin(); iES != sc.preshowerClustersEnd(); ++iES) {//loop over preshower clusters
       const std::vector< std::pair<DetId, float> > hits = (*iES)->hitsAndFractions();
       for(std::vector<std::pair<DetId, float> >::const_iterator rh = hits.begin(); rh != hits.end(); ++rh) { // loop over recHits of the cluster
-         //      std::cout << "print = " << (*iES)->printHitAndFraction(iCount);
-         //      ++iCount;
-         for(ESRecHitCollection::const_iterator esItr = ESRechitsHandle->begin(); esItr != ESRechitsHandle->end(); ++esItr) {//loop over ES rechits to find the one in the cluster
+         //std::cout << "print = " << (*iES)->printHitAndFraction(iCount);
+         //++iCount;
+         for(ESRecHitCollection::const_iterator esItr = ESRechitsHandle->begin(); esItr != ESRechitsHandle->end(); ++esItr) {
+            //loop over ES rechits to find the one in the cluster
             ESDetId rhid = ESDetId(esItr->id());
             if(rhid == (*rh).first) { // found ESrechit
-               //                                        std::cout << " ES energy = " << esItr->energy() << " pf energy = " << (*rh).second << std::endl;
+               //std::cout << " ES energy = " << esItr->energy() << " pf energy = " << (*rh).second << std::endl;
                if((int) rhid.plane() == (int) planeIndex) {
                   std::shared_ptr<const CaloCellGeometry> geom = ecalESGeom->getGeometry(rhid);
                   Hit_ES_Eta[phonum].push_back( geom->etaPos() );
@@ -633,7 +669,7 @@ void Photon_RefinedRecHit_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster&
 
                      if (DEBUG) cout<< "ES Flag: "<<iflag<<endl;
                   }
-                  //						std::cout << "Preshower" <<std::setprecision(4) << " Eta = " <<geom->etaPos() << " : " <<" Phi = "<< geom->phiPos() << " 3D position" << geom->getPosition().z() << std::endl;
+                  //std::cout << "Preshower" <<std::setprecision(4) << " Eta = " <<geom->etaPos() << " : " <<" Phi = "<< geom->phiPos() << " 3D position" << geom->getPosition().z() << std::endl;
                   RawenergyPlane += esItr->energy();
                   pfRawenergyPlane += rh->second;
                   NumHits++;
@@ -643,15 +679,15 @@ void Photon_RefinedRecHit_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster&
          }
       }
 
-      //		std::cout<<std::endl<<" Number of ES hits in plane 1 = "<<NumHits<<std::endl;
+      //std::cout<<std::endl<<" Number of ES hits in plane 1 = "<<NumHits<<std::endl;
    }
 
-   //       return RawenergyPlane;
+   //return RawenergyPlane;
 }
 
 
 //Clear tree vectors each time analyze method is called
-void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
+void Photon_RefinedRecHit_MiniAOD_NTuplizer::ClearTreeVectors()
 {
    nPhotons_ = 0;
    iEta[0].clear();
@@ -820,7 +856,7 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-Photon_RefinedRecHit_NTuplizer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+Photon_RefinedRecHit_MiniAOD_NTuplizer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
    //The following says we do not know what parameters are allowed so do no validation
    // Please change this to state exactly what you do use, even if it is no parameters
    edm::ParameterSetDescription desc;
@@ -835,4 +871,4 @@ Photon_RefinedRecHit_NTuplizer::fillDescriptions(edm::ConfigurationDescriptions&
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(Photon_RefinedRecHit_NTuplizer);
+DEFINE_FWK_MODULE(Photon_RefinedRecHit_MiniAOD_NTuplizer);

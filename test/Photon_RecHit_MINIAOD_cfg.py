@@ -14,11 +14,7 @@ options.parseArguments()
 process.source = cms.Source("PoolSource",
                                 # replace 'myfile.root' with the source file you want to use
                                 fileNames = cms.untracked.vstring(
-            'root://cms-xrd-global.cern.ch//store/mc/RunIISummer19UL18RECO/DoubleElectron_FlatPt-1To300/AODSIM/FlatPU0to70RAW_106X_upgrade2018_realistic_v11_L1v1_ext2-v2/40000/FF912577-7001-DE41-BDB0-6FF06EC01DA6.root'
-           #'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/DoublePhoton_FlatPt-5To300/AODSIM/FlatPU0to70RAW_106X_upgrade2018_realistic_v11_L1v1_ext1-v2/00000/6F7BDF5D-2A6A-7342-993F-E8DBABF920C8.root'
-   #         'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/250000/35BAE18A-E8EA-254E-B693-9212D3725212.root'
-     #       'root://cms-xrd-global.cern.ch///store/mc/RunIISummer19UL18RECO/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/250000/26B3A9F9-290D-6346-8862-2BE71645C57D.root'
-      #          options.inputFiles
+            'root://cms-xrd-global.cern.ch//store/data/Run2018A/EGamma/MINIAOD/12Nov2019_UL2018-v2/70000/3DB4D471-74C3-5E46-87FA-B6867DBC7AED.root',
                 )
                             )
 
@@ -39,9 +35,9 @@ for idmod in my_id_modules:
         setupAllVIDIdsInModule(process, idmod, setupVIDPhotonSelection)
 
 process.nTuplelize = cms.EDAnalyzer('Photon_RefinedRecHit_MiniAOD_NTuplizer',
-        ebRecHits = cms.InputTag("reducedEgamma","reducedEBRecHits","PAT"),
-        eeRecHits = cms.InputTag("reducedEgamma","reducedEERecHits","PAT"),
-        esRecHits = cms.InputTag("reducedEgamma","reducedESRecHits","PAT"),
+        ebRecHits = cms.InputTag("reducedEgamma","reducedEBRecHits","RECO"),
+        eeRecHits = cms.InputTag("reducedEgamma","reducedEERecHits","RECO"),
+        esRecHits = cms.InputTag("reducedEgamma","reducedESRecHits","RECO"),
         debug = cms.bool(False),
         isMC = cms.bool(False),
         useOuterHits = cms.bool(False),

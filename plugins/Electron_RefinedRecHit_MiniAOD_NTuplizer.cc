@@ -1,4 +1,4 @@
-#include "../interface/Electron_RefinedRecHit_NTuplizer.h"
+#include "../interface/Electron_RefinedRecHit_MiniAOD_NTuplizer.h"
 
 //
 // constructors and destructor
@@ -12,7 +12,7 @@
 using namespace edm;
 using namespace std;
 using namespace reco;
-
+using namespace pat;
 
 //
 // constants, enums and typedefs
@@ -25,12 +25,12 @@ using namespace reco;
 //
 // constructors and destructor
 //
-Electron_RefinedRecHit_NTuplizer::Electron_RefinedRecHit_NTuplizer(const edm::ParameterSet& iConfig):
+Electron_RefinedRecHit_MiniAOD_NTuplizer::Electron_RefinedRecHit_MiniAOD_NTuplizer(const edm::ParameterSet& iConfig):
+   recHitCollectionEBToken_(consumes<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > >(iConfig.getParameter<edm::InputTag>("ebRecHits"))),
+   recHitCollectionEEToken_(consumes<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > >(iConfig.getParameter<edm::InputTag>("eeRecHits"))),
+   recHitCollectionESToken_(consumes<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > >(iConfig.getParameter<edm::InputTag>("esRecHits"))),
    rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoFastJet"))),
-   recHitCollectionEBToken_(consumes<EcalRecHitCollection>(edm::InputTag("reducedEcalRecHitsEB"))),
-   recHitCollectionEEToken_(consumes<EcalRecHitCollection>(edm::InputTag("reducedEcalRecHitsEE"))),
-   recHitCollectionESToken_(consumes<EcalRecHitCollection>(edm::InputTag("reducedEcalRecHitsES"))),
-   //eleLooseIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleLooseIdMap"))),
+   eleLooseIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleLooseIdMap"))),
    eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap"))),
    eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
 {
@@ -38,16 +38,19 @@ Electron_RefinedRecHit_NTuplizer::Electron_RefinedRecHit_NTuplizer(const edm::Pa
    isMC_ = iConfig.getParameter<bool>("isMC");
    miniAODRun_ = iConfig.getParameter<bool>("miniAODRun");
    refinedCluster_ = iConfig.getParameter<bool>("refinedCluster");
-   electronsToken_ = mayConsume<edm::View<reco::GsfElectron> >(iConfig.getParameter<edm::InputTag>("electrons"));
-   photonsToken_ = mayConsume<edm::View<reco::Photon> >(iConfig.getParameter<edm::InputTag>("photons"));
-   genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("genParticles"));
+   //electronsToken_ = mayConsume<edm::View<reco::GsfElectron> >(iConfig.getParameter<edm::InputTag>("electrons"));
+   //genParticlesToken_ = mayConsume<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("genParticles"));
+   electronsToken_ = mayConsume<std::vector<pat::Electron> >(iConfig.getParameter<edm::InputTag>("electrons"));
+   photonsToken_ = mayConsume<std::vector<pat::Photon> >(iConfig.getParameter<edm::InputTag>("photons"));
+   genParticlesToken_ = mayConsume<std::vector<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("genParticles"));
+   egammaDeltaRMatch_ = iConfig.getParameter<double>("egammaDeltaRMatch");
    usesResource("TFileService");
 
    isRefinedSC = refinedCluster_; // store the type of SC used
 }
 
 
-Electron_RefinedRecHit_NTuplizer::~Electron_RefinedRecHit_NTuplizer()
+Electron_RefinedRecHit_MiniAOD_NTuplizer::~Electron_RefinedRecHit_MiniAOD_NTuplizer()
 {
 
    // do anything here that needs to be done at desctruction time
@@ -65,7 +68,7 @@ Electron_RefinedRecHit_NTuplizer::~Electron_RefinedRecHit_NTuplizer()
 
 // ------------ method called for each event  ------------
    void
-Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+Electron_RefinedRecHit_MiniAOD_NTuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    iEvent.getByToken(rhoToken_, rhoHandle);
    iEvent.getByToken(recHitCollectionEBToken_, EBRechitsHandle);
@@ -74,7 +77,7 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
    iEvent.getByToken(electronsToken_, electrons);
    iEvent.getByToken(photonsToken_, photons);
    iEvent.getByToken(genParticlesToken_, genParticles);
-   //iEvent.getByToken(eleLooseIdMapToken_, loose_id_decisions);
+   iEvent.getByToken(eleLooseIdMapToken_, loose_id_decisions);
    iEvent.getByToken(eleMediumIdMapToken_, medium_id_decisions);
    iEvent.getByToken(eleTightIdMapToken_ , tight_id_decisions);
 
@@ -101,17 +104,32 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
    const EcalRecHitCollection *recHitsEB = clustertools_NoZS->getEcalEBRecHitCollection();
    const EcalRecHitCollection *recHitsEE = clustertools_NoZS->getEcalEERecHitCollection();
    for (size_t i = 0; i < electrons->size(); ++i){
+      
+      
       if (nElectrons_ == 2) break;
-      const auto ele = electrons->ptrAt(i);
-      if( ele->pt() < 10 ) continue;
-      if (!ele->ecalDriven()) continue;
+      const auto ele = electrons->at(i);
+      if( ele.pt() < 10 ) continue;
 
+      const edm::Ptr<pat::Electron> elePtr(electrons, i);
       SuperClusterRef sc;
+      
+      if (!ele.ecalDriven()) continue;
 
-      if (refinedCluster_) sc = ele->superCluster(); // use for refined, comment out for unrefined
+      if (refinedCluster_) sc = ele.superCluster(); // use for refined, comment out for unrefined
       else{
-        if (ele->parentSuperCluster().isNull()) continue;
-        sc = ele->parentSuperCluster();
+
+        try {
+           auto tmpCluster = ele.parentSuperCluster();
+        } catch(...){
+           cout<<"Parent supercluster does not exist"<<endl;
+        }
+
+
+        if (ele.parentSuperCluster().isNull()) {
+           cout<<"Parent supercluster does not exist!"<<endl;
+           continue;
+        }
+        sc = ele.parentSuperCluster();
       }
 
       std::vector< std::pair<DetId, float> > hitsAndFractions = sc->hitsAndFractions();
@@ -162,8 +180,8 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
 
          if (DEBUG) cout<<endl<<" Reco Flags = "<<oneHit->recoFlag()<<endl;
 
-         if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) 		RecHitGain[nElectrons_].push_back(6);
-         else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1))            RecHitGain[nElectrons_].push_back(1);
+         if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain6)) RecHitGain[nElectrons_].push_back(6);
+         else if(oneHit->checkFlag(EcalRecHit::kHasSwitchToGain1)) RecHitGain[nElectrons_].push_back(1);
          else RecHitGain[nElectrons_].push_back(12);
          HitNoise[nElectrons_].push_back(_ped->find(detitr.first)->rms(1));
       }  
@@ -174,68 +192,68 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
       }
 
       nElectrons_++;
-      Ele_pt_.push_back( ele->pt() );
-      Ele_eta_.push_back( ele->superCluster()->eta() );
-      Ele_phi_.push_back( ele->superCluster()->phi() );
-      Ele_energy_.push_back( ele->energy() );
-      Ele_energy_error_.push_back( ele->correctedEcalEnergyError() );
-      Ele_ecal_mustache_energy_.push_back( ele->correctedEcalEnergy() );
-      Ele_R9.push_back(ele->full5x5_r9());
-      Ele_SigIEIE.push_back(ele->full5x5_sigmaIetaIeta());
-      Ele_SigIPhiIPhi.push_back(ele->full5x5_sigmaIphiIphi());
-      Ele_SCEtaW.push_back(ele->superCluster()->etaWidth());
-      Ele_SCPhiW.push_back(ele->superCluster()->phiWidth());
-      Ele_HadOverEm.push_back(ele->hadronicOverEm());
-      const CaloClusterPtr seed_clu = ele->superCluster()->seed();
+      Ele_pt_.push_back( ele.pt() );
+      Ele_eta_.push_back( sc->eta() );
+      Ele_phi_.push_back( sc->phi() );
+      Ele_energy_.push_back( ele.energy() );
+      Ele_energy_error_.push_back( ele.correctedEcalEnergyError() );
+      Ele_ecal_mustache_energy_.push_back( ele.correctedEcalEnergy() );
+      Ele_R9.push_back(ele.full5x5_r9());
+      Ele_SigIEIE.push_back(ele.full5x5_sigmaIetaIeta());
+      Ele_SigIPhiIPhi.push_back(ele.full5x5_sigmaIphiIphi());
+      Ele_SCEtaW.push_back(sc->etaWidth());
+      Ele_SCPhiW.push_back(sc->phiWidth());
+      Ele_HadOverEm.push_back(ele.hadronicOverEm());
+      const CaloClusterPtr seed_clu = sc->seed();
       //        if (!seed_clu) continue;
       //        Ele_CovIEtaIEta.push_back(clustertools_NoZS->localCovariances(*seed_clu)[0]);
       //        Ele_CovIEtaIPhi.push_back(clustertools_NoZS->localCovariances(*seed_clu)[1]);
       //	Ele_ESSigRR.push_back(clustertools->eseffsirir( *(ele->superCluster()) ) );
-      Ele_SCRawE.push_back(ele->superCluster()->rawEnergy());
-      Ele_SC_ESEnByRawE.push_back( (ele->superCluster()->preshowerEnergy())/(ele->superCluster()->rawEnergy()) );
+      Ele_SCRawE.push_back(sc->rawEnergy());
+      Ele_SC_ESEnByRawE.push_back( (sc->preshowerEnergy())/(sc->rawEnergy()) );
       //        Ele_S4.push_back(clustertools_NoZS->e2x2( *seed_clu ) / clustertools_NoZS->e5x5( *seed_clu ) );
 
       // Fill Isolation variables
-      Ele_sumChargedHadronPt.push_back(ele->pfIsolationVariables().sumChargedHadronPt);
-      Ele_sumChargedParticlePt.push_back(ele->pfIsolationVariables().sumChargedParticlePt);
-      Ele_sumEcalClusterEt.push_back(ele->pfIsolationVariables().sumEcalClusterEt);
-      Ele_sumHcalClusterEt.push_back(ele->pfIsolationVariables().sumHcalClusterEt);
-      Ele_sumNeutralHadronEt.push_back(ele->pfIsolationVariables().sumNeutralHadronEt);
-      Ele_sumPhotonEt.push_back(ele->pfIsolationVariables().sumPhotonEt);
-      Ele_sumPUPt.push_back(ele->pfIsolationVariables().sumPUPt);
-      Ele_EcalPFClusterIso.push_back(ele->ecalPFClusterIso());
-      Ele_HcalPFClusterIso.push_back(ele->hcalPFClusterIso());
+      Ele_sumChargedHadronPt.push_back(ele.pfIsolationVariables().sumChargedHadronPt);
+      Ele_sumChargedParticlePt.push_back(ele.pfIsolationVariables().sumChargedParticlePt);
+      Ele_sumEcalClusterEt.push_back(ele.pfIsolationVariables().sumEcalClusterEt);
+      Ele_sumHcalClusterEt.push_back(ele.pfIsolationVariables().sumHcalClusterEt);
+      Ele_sumNeutralHadronEt.push_back(ele.pfIsolationVariables().sumNeutralHadronEt);
+      Ele_sumPhotonEt.push_back(ele.pfIsolationVariables().sumPhotonEt);
+      Ele_sumPUPt.push_back(ele.pfIsolationVariables().sumPUPt);
+      Ele_EcalPFClusterIso.push_back(ele.ecalPFClusterIso());
+      Ele_HcalPFClusterIso.push_back(ele.hcalPFClusterIso());
 
       // Get the Photon BDT score
-      float tmpenergy = -99.0;
-      float tmpenergyErr = -99.0;
-      
-
+      bool hasMatchedPhoton = false;
+      auto matchedPho = photons->end();
       if(photons.isValid()) {
          //now associate electron to photon via SC
-         for (size_t jphoton = 0; jphoton < photons->size(); ++jphoton){
-            
-             pho_itr = photons->ptrAt(jphoton);
-            //const SuperClusterRef& pho_sc = pho_itr->superCluster(); 
-            
+         for (auto pho_itr = photons->begin(); pho_itr != photons->end(); ++pho_itr) {
             float dR = reco::deltaR(sc->eta(), sc->phi(), pho_itr->superCluster()->eta(), pho_itr->superCluster()->phi());
             if (dR < egammaDeltaRMatch_) {
-               tmpenergy = pho_itr->energy();
-               tmpenergyErr = pho_itr->getCorrectedEnergyError(pho_itr->getCandidateP4type());
+               hasMatchedPhoton = true;
+               matchedPho = pho_itr;
                break;
             }
          }
       }
 
-      Ele_energy_ECAL_pho.push_back(tmpenergy);
-      Ele_energyUncertainty_ECAL_pho.push_back(tmpenergyErr);
+      if (hasMatchedPhoton){
+         Ele_energy_ECAL_pho.push_back(matchedPho->energy());
+         Ele_energyUncertainty_ECAL_pho.push_back(matchedPho->getCorrectedEnergyError(matchedPho->getCandidateP4type()));
+      }
+      else {
+         Ele_energy_ECAL_pho.push_back(-99.0);
+         Ele_energyUncertainty_ECAL_pho.push_back(-99.0);
+      }
+
 
       ////// Look up and save the ID decisions
-      //bool isPassLoose  = false;
-      //if (loose_id_decisions.isValid()) isPassLoose = (*loose_id_decisions)[ele];
-      bool isPassMedium = (*medium_id_decisions)[ele];
-      bool isPassTight  = (*tight_id_decisions)[ele];
-      //passLooseId_.push_back( (int) isPassLoose);
+      bool isPassLoose  = (*loose_id_decisions)[elePtr];
+      bool isPassMedium = (*medium_id_decisions)[elePtr];
+      bool isPassTight  = (*tight_id_decisions)[elePtr];
+      passLooseId_.push_back( (int) isPassLoose);
       passMediumId_.push_back( (int) isPassMedium);
       passTightId_.push_back ( (int) isPassTight );
 
@@ -246,7 +264,7 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
 
    //////////////////////// Gen Stuff hardcaded for status 1 electrons for now /////////////////////////////////////
    if (isMC_){
-      for(edm::View<GenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
+      for(std::vector<pat::PackedGenParticle>::const_iterator part = genParticles->begin(); part != genParticles->end(); ++part){
          if( part->status()==1  && abs(part->pdgId())==11 ){
             Ele_Gen_Pt.push_back(part->pt());
             Ele_Gen_Eta.push_back(part->eta());
@@ -278,7 +296,7 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
 
 // ------------ method called once each job just before starting event loop  ------------
    void
-Electron_RefinedRecHit_NTuplizer::beginJob()
+Electron_RefinedRecHit_MiniAOD_NTuplizer::beginJob()
 {
    edm::Service<TFileService> fs;
    T=fs->make<TTree>("T","MyTuple");
@@ -406,7 +424,7 @@ Electron_RefinedRecHit_NTuplizer::beginJob()
    T->Branch("Ele_energy_ECAL_pho", &Ele_energy_ECAL_pho);
    T->Branch("Ele_energyUncertainty_ECAL_pho", &Ele_energyUncertainty_ECAL_pho);
 
-   //T->Branch("passLooseId", &passLooseId_);
+   T->Branch("passLooseId", &passLooseId_);
    T->Branch("passMediumId" ,  &passMediumId_ );
    T->Branch("passTightId"  ,  &passTightId_ );
    //   T->Branch("passMVAMediumId", &passMVAMediumId_);
@@ -454,13 +472,13 @@ Electron_RefinedRecHit_NTuplizer::beginJob()
 
 // ------------ method called once each job just after ending the event loop  ------------
    void
-Electron_RefinedRecHit_NTuplizer::endJob()
+Electron_RefinedRecHit_MiniAOD_NTuplizer::endJob()
 {
 }
 
 /*
 //Evaluate if the gen particle dR matched to a reco electron is also a electron
-bool Electron_RefinedRecHit_NTuplizer::GetGenMatchType(const reco::GsfElectron& Electron, const reco::GenParticle& GenColl, int pdgId, double dRThresh){
+bool Electron_RefinedRecHit_MiniAOD_NTuplizer::GetGenMatchType(const reco::GsfElectron& Electron, const reco::GenParticle& GenColl, int pdgId, double dRThresh){
 
 
 }
@@ -468,7 +486,7 @@ bool Electron_RefinedRecHit_NTuplizer::GetGenMatchType(const reco::GsfElectron& 
 
 
 // Extract the rechits of the SC from the ES layers
-void Electron_RefinedRecHit_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int elenum, unsigned int planeIndex) {
+void Electron_RefinedRecHit_MiniAOD_NTuplizer::GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int elenum, unsigned int planeIndex) {
    double RawenergyPlane = 0.;
    double pfRawenergyPlane = 0.;
    //      if(!_ESRechitsHandle.isValid())
@@ -524,7 +542,7 @@ void Electron_RefinedRecHit_NTuplizer::GetESPlaneRecHits(const reco::SuperCluste
 
 
 //Clear tree vectors each time analyze method is called
-void Electron_RefinedRecHit_NTuplizer::ClearTreeVectors()
+void Electron_RefinedRecHit_MiniAOD_NTuplizer::ClearTreeVectors()
 {
    nElectrons_ = 0;
    iEta[0].clear();
@@ -702,7 +720,7 @@ void Electron_RefinedRecHit_NTuplizer::ClearTreeVectors()
    Ele_Gen_Phi.clear();
    Ele_Gen_E.clear();
 
-   //passLooseId_.clear();
+   passLooseId_.clear();
    passMediumId_.clear();
    passTightId_ .clear();
    passMVAMediumId_.clear();
@@ -712,7 +730,7 @@ void Electron_RefinedRecHit_NTuplizer::ClearTreeVectors()
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-Electron_RefinedRecHit_NTuplizer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+Electron_RefinedRecHit_MiniAOD_NTuplizer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
    //The following says we do not know what parameters are allowed so do no validation
    // Please change this to state exactly what you do use, even if it is no parameters
    edm::ParameterSetDescription desc;
@@ -727,4 +745,4 @@ Electron_RefinedRecHit_NTuplizer::fillDescriptions(edm::ConfigurationDescription
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(Electron_RefinedRecHit_NTuplizer);
+DEFINE_FWK_MODULE(Electron_RefinedRecHit_MiniAOD_NTuplizer);

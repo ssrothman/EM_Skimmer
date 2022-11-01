@@ -1,19 +1,15 @@
 InputDataset:
-  - '/EGamma/Run2018A-12Nov2019_UL2018-v2/AOD'
-  - '/EGamma/Run2018B-12Nov2019_UL2018-v2/AOD'
-  - '/EGamma/Run2018C-12Nov2019_UL2018-v2/AOD'
-  - '/EGamma/Run2018D-12Nov2019_UL2018-v4/AOD'
+  - "/DoubleElectron_Pt-1To300-gun/RunIISummer20UL18RECO-FlatPU0to70EdalIdealGT_EdalIdealGT_106X_upgrade2018_realistic_v11_L1v1_EcalIdealIC-v2/AODSIM"
+  - '/DoubleElectron_FlatPt-1To300/RunIISummer19UL18RECO-FlatPU0to70RAW_106X_upgrade2018_realistic_v11_L1v1_ext2-v2/AODSIM'
 OutputFile:
   - 'ElectronRecHits_ntuple.root'
-JSON: 'json/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'
-GlobalTag: '106X_dataRun2_v27' 
 TransferOutputs: True
 TransferLogs: True
-PsetName: 'Electron_RecHit_AOD_cfg.py'
+PsetName: 'Electron_RecHit_AODSIM_cfg.py'
 MaxJobRunTime: 2750
 InputDBS: 'global'
-Splitting: 'LumiBased'
-UnitsPerJob: 10
+Splitting: 'FileBased'
+UnitsPerJob: 20
 FilePath: '/store/user/bjoshi'
 StorageSite: 'T2_US_Florida'
 UseWhitelist: False

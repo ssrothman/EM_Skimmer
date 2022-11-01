@@ -53,11 +53,11 @@ from EM_GNN_ID.EM_Skimmer.Electron_RecHits_cff import setupElectronNtuplizer
 
 process.nTuplelize = cms.EDAnalyzer('Electron_RefinedRecHit_NTuplizer',
         rhoFastJet = cms.InputTag("fixedGridRhoAll"),
+        photons = cms.InputTag("photons"),
         electrons = cms.InputTag("gedGsfElectrons"),
         genParticles = cms.InputTag("genParticles"),
         refinedCluster = cms.bool(False),
         isMC = cms.bool(False), 
-        miniAODRun = cms.bool(False),
         #MVA Based Id
 	eleLooseIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-loose"),
         eleMediumIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-medium"),

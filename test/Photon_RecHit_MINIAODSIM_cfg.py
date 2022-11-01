@@ -7,7 +7,7 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 
 process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
 
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(2500)
 
@@ -28,10 +28,7 @@ options.parseArguments()
 process.source = cms.Source("PoolSource",
                                 # replace 'myfile.root' with the source file you want to use
                                 fileNames = cms.untracked.vstring(
-                                #    'root://cms-xrd-global.cern.ch//store/data/Run2018A/EGamma/AOD/12Nov2019_UL2018-v2/710000/B43485A1-DA02-2747-8BD5-C1E17313CC27.root'
-                                #'root://cms-xrd-global.cern.ch//store/mc/RunIISummer20UL18RECO/DoublePhoton_Pt-5To300-gun/AODSIM/FlatPU0to70EdalIdealGT_EdalIdealGT_106X_upgrade2018_realistic_v11_L1v1_EcalIdealIC-v2/280000/DA55E6E8-8F95-CE4C-9FB9-8393ECE23A09.root'
-                                #'root://cms-xrd-global.cern.ch//store/mc/RunIISummer20UL18RECO/GluGluHToGG_M-125_TuneCP5_13TeV-powheg-pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v2/40000/9DAAC020-4F79-6641-B3C4-A48EBECECED5.root'
-                                'root://cms-xrd-global.cern.ch:1094//store/mc/RunIISummer20UL18RECO/GluGluHToGG_M-125_TuneCP5_13TeV-powheg-pythia8/AODSIM/106X_upgrade2018_realistic_v11_L1v1-v2/40000/418EDE70-2DF3-714A-8436-71F580A9ED86.root'
+                                    '/store/mc/RunIISummer20UL18MiniAOD/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/260000/8D4B008D-BE14-DD47-8949-C4640525DA1F.root'
                                 )
                             )
 
@@ -46,28 +43,25 @@ dataFormat = DataFormat.AOD
 switchOnVIDPhotonIdProducer(process, dataFormat)
 
 # define which IDs we want to produce
-my_id_modules = ['RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V1_cff',
-'RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V1p1_cff',
-'RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V2_cff']
+my_id_modules = ['RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V1_cff','RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V1p1_cff','RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V2_cff']
 
 for idmod in my_id_modules:
         setupAllVIDIdsInModule(process, idmod, setupVIDPhotonSelection)
 
-process.nTuplelize = cms.EDAnalyzer('Photon_RefinedRecHit_NTuplizer',
+process.nTuplelize = cms.EDAnalyzer('Photon_RefinedRecHit_MiniAOD_NTuplizer',
+        ebRecHits = cms.InputTag("reducedEgamma","reducedEBRecHits","PAT"),
+        eeRecHits = cms.InputTag("reducedEgamma","reducedEERecHits","PAT"),
+        esRecHits = cms.InputTag("reducedEgamma","reducedESRecHits","PAT"),
         debug = cms.bool(False),
         isMC = cms.bool(True),
-        miniAODRun = cms.bool(False),
         useOuterHits = cms.bool(False),
         rhoFastJet = cms.InputTag("fixedGridRhoFastjetAll"),
-        photons = cms.InputTag("gedPhotons"),
-        genParticles = cms.InputTag("genParticles"),
+        photons = cms.InputTag("slimmedPhotons"),
+        genParticles = cms.InputTag("packedGenParticles"),
         #MVA Based Id
         eleMediumIdMap = cms.InputTag(""),
         eleTightIdMap = cms.InputTag(""),
         #Calo clusters
-        eeebClusters = cms.InputTag("particleFlowEGamma:EBEEClusters:RECO"),
-        esClusters = cms.InputTag("particleFlowEGamma:ESClusters:RECO"),
-
         ebNeighbourXtalMap = cms.FileInPath("EM_GNN_ID/EM_Skimmer/data/EB_xtal_dR0p3_map.root"),
         eeNeighbourXtalMap = cms.FileInPath("EM_GNN_ID/EM_Skimmer/data/EE_xtal_dR0p3_map.root")
 	)

@@ -62,6 +62,8 @@ Implementation:
 #include "DataFormats/PatCandidates/interface/VIDCutFlowResult.h"
 
 #include "DataFormats/EgammaReco/interface/SuperCluster.h"
+#include "DataFormats/EgammaCandidates/interface/Photon.h"
+#include "DataFormats/PatCandidates/interface/Photon.h"
 
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
@@ -87,7 +89,6 @@ Implementation:
 
 using namespace std;
 using namespace edm;
-using namespace pat;
 using namespace reco;
 
 class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
@@ -132,6 +133,7 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
 
       // ----------member data ---------------------------
       bool isMC_, miniAODRun_, refinedCluster_;
+      double egammaDeltaRMatch_;
 
       TTree* T;
 
@@ -141,6 +143,8 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       int lumi;
 
       bool isRefinedSC;
+      
+      edm::Ptr<reco::Photon> pho_itr;
 
       // Electron variables
       int nElectrons_;
@@ -244,6 +248,8 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       std::vector<float> Ele_energy_;
       std::vector<float> Ele_energy_error_;
       std::vector<float> Ele_ecal_mustache_energy_;
+      std::vector<float> Ele_energy_ECAL_pho;
+      std::vector<float> Ele_energyUncertainty_ECAL_pho;
 
       std::vector<float> Ele_R9;
       std::vector<float> Ele_S4;
@@ -288,6 +294,7 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       edm::Handle<EcalRecHitCollection> ESRechitsHandle;
       edm::Handle<edm::View<reco::GsfElectron> > electrons;
       edm::Handle<edm::View<reco::GenParticle> > genParticles;
+      edm::Handle<edm::View<reco::Photon> > photons;
       edm::Handle<edm::ValueMap<bool> > loose_id_decisions;
       edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
       edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
@@ -297,6 +304,7 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEEToken_;
       edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionESToken_;
       edm::EDGetToken electronsToken_;
+      edm::EDGetToken photonsToken_;
       edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleLooseIdMapToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;

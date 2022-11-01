@@ -1,15 +1,15 @@
 InputDataset:
-  - '/EGamma/Run2018A-12Nov2019_UL2018-v2/AOD'
-  - '/EGamma/Run2018B-12Nov2019_UL2018-v2/AOD'
-  - '/EGamma/Run2018C-12Nov2019_UL2018-v2/AOD'
-  - '/EGamma/Run2018D-12Nov2019_UL2018-v4/AOD'
+  - '/EGamma/Run2018A-12Nov2019_UL2018-v2/MINIAOD'
+  - '/EGamma/Run2018B-12Nov2019_UL2018-v2/MINIAOD'
+  - '/EGamma/Run2018C-12Nov2019_UL2018-v2/MINIAOD'
+  - '/EGamma/Run2018D-12Nov2019_UL2018-v8/MINIAOD'
 OutputFile:
-  - 'ElectronRecHits_ntuple.root'
+  - 'GammaRecHits_ntuple.root'
 JSON: 'json/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'
 GlobalTag: '106X_dataRun2_v27' 
 TransferOutputs: True
 TransferLogs: True
-PsetName: 'Electron_RecHit_AOD_cfg.py'
+PsetName: 'Photon_RecHit_MINIAOD_cfg.py'
 MaxJobRunTime: 2750
 InputDBS: 'global'
 Splitting: 'LumiBased'

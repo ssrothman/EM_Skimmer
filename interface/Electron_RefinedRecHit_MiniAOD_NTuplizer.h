@@ -1,33 +1,35 @@
-#ifndef Photon_RefinedRecHit_NTuplizer_h
-#define Photon_RefinedRecHit_NTuplizer_h
+#ifndef Electron_RefinedRecHit_MiniAOD_NTuplizer_h
+#define Electron_RefinedRecHit_MiniAOD_NTuplizer_h
 
 // -*- C++ -*-
-// //
-// // Package:    EM_GNN_ID/EM_Skimmer/
-// // Class:      Photon_RefinedRecHit_NTuplizer
-// //
-// /**\class Photon_RefinedRecHit_NTuplizer Photon_RefinedRecHit_NTuplizer.cc
 //
-// Description: Class to produce refined photon rechit Id
+// Package:    Electron_GNN_Regression/Electron_RefinedRecHit_MiniAOD_NTuplizer
+// Class:      Electron_RefinedRecHit_MiniAOD_NTuplizer
 //
-// Implementation:
-// */
-// //
-// // Original Author:  Rajdeep Mohan Chatterjee
-// //         Created:  Fri, 21 Feb 2020 11:38:58 GMT
-// //
-// //
+/**\class Electron_RefinedRecHit_MiniAOD_NTuplizer Electron_RefinedRecHit_NTuplizer.cc Electron_GNN_Regression/Electron_RefinedRecHit_NTuplizer/plugins/Electron_RefinedRecHit_NTuplizer.cc
+
+Description: [one line class summary]
+
+Implementation:
+[Notes on implementation]
+*/
+//
+// Original Author:  Rajdeep Mohan Chatterjee
+// Modified by    :  Bhargav Madhusudan Joshi     
+//         Created:  Tue, 20 Sep 2022 11:54:35 GMT
+//
+//
 
 // system include files
 #include <memory>
 #include <iostream>
-#include <TTree.h>
-#include <TXMLEngine.h>
+#include "TTree.h"
 
 
 // utilities
 #include "Math/VectorUtil.h"
 #include "TFile.h"
+
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
@@ -51,26 +53,7 @@
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
 #include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
 
-#include "DataFormats/EgammaCandidates/interface/Photon.h"
-#include "DataFormats/PatCandidates/interface/Photon.h"
-
-#include "DataFormats/Candidate/interface/Candidate.h"
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-
 #include "DataFormats/Common/interface/ValueMap.h"
-#include "DataFormats/PatCandidates/interface/VIDCutFlowResult.h"
-
-#include "DataFormats/EgammaReco/interface/SuperCluster.h"
-
-#include "DataFormats/MuonReco/interface/Muon.h"
-#include "DataFormats/MuonReco/interface/MuonSelectors.h"
-#include "DataFormats/PatCandidates/interface/Muon.h"
-#include "DataFormats/VertexReco/interface/VertexFwd.h"
-#include "DataFormats/VertexReco/interface/Vertex.h"
-
-#include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
-#include "RecoEcal/EgammaCoreTools/interface/EcalClusterLazyTools.h"
-#include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
 
 #include "DataFormats/EcalDetId/interface/EcalSubdetector.h"
 #include "DataFormats/EcalDetId/interface/EBDetId.h"
@@ -79,23 +62,45 @@
 #include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 
+#include "DataFormats/EgammaCandidates/interface/Electron.h"
+#include "DataFormats/EgammaReco/interface/SuperCluster.h"
+
+#include "DataFormats/Candidate/interface/Candidate.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+
+#include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/PatCandidates/interface/Electron.h"
+#include "DataFormats/PatCandidates/interface/Photon.h"
+#include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
+#include "DataFormats/PatCandidates/interface/VIDCutFlowResult.h"
+
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/MuonSelectors.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
+
+#include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalClusterLazyTools.h"
+#include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
+
+
+
 //
 //
 // class declaration
 //
+
 using namespace std;
 using namespace edm;
 using namespace pat;
 using namespace reco;
 
-class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+class Electron_RefinedRecHit_MiniAOD_NTuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
    public:
-      explicit Photon_RefinedRecHit_NTuplizer(const edm::ParameterSet&);
-      ~Photon_RefinedRecHit_NTuplizer();
+      explicit Electron_RefinedRecHit_MiniAOD_NTuplizer(const edm::ParameterSet&);
+      ~Electron_RefinedRecHit_MiniAOD_NTuplizer();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
-      void readROOTLUTables();
 
       std::vector<float> Hit_ES_Eta[2];
       std::vector<float> Hit_ES_Phi[2];
@@ -110,9 +115,7 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
 
-
       bool DEBUG = false;
-
 
       //   cluster tools
       EcalClusterLazyTools *clustertools;
@@ -124,36 +127,29 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
       bool isEE = 0; // !isEB not sufficient since later will try to include the preshower as well
 
 
-      // bool GetGenMatchType(const reco::Photon& Photon, const reco::GenParticle& GenColl, int pdgId, double dRThresh);
+      //     bool GetGenMatchType(const reco::Eleton& Eleton, const reco::GenParticle& GenColl, int pdgId, double dRThresh);
       // Get the hits from the ES
-      // std::vector<GlobalPoint> GetESPlaneRecHits(const reco::SuperCluster& sc, unsigned int planeIndex) const;
-      void GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int phonum, unsigned int planeIndex);
+      //     std::vector<GlobalPoint> GetESPlaneRecHits(const reco::SuperCluster& sc, unsigned int planeIndex) const;
+      void GetESPlaneRecHits(const reco::SuperCluster& sc, const CaloGeometry* &geo, unsigned int elenum, unsigned int planeIndex);
 
       //   clear the vectors 
       void ClearTreeVectors();
 
       // ----------member data ---------------------------
-      bool isMC_, miniAODRun_, useOuterHits_;
-      edm::FileInPath ebNeighbourXtalMap_;
-      edm::FileInPath eeNeighbourXtalMap_;
-      
-      TTree* T;
-   
-      // Create engine
-      TXMLEngine xml;
+      bool isMC_, miniAODRun_, refinedCluster_;
+      double egammaDeltaRMatch_;
 
-      // Define xtal maps
-      std::map<int, vector<int>> ebnxtals;
-      std::map<int, vector<int>> eenxtals;
+      TTree* T;
 
       // Variables for Run info.
       int run;
       int event;
       int lumi;
-      
+
+      bool isRefinedSC;
 
       // Electron variables
-      int nPhotons_;
+      int nElectrons_;
       Float_t rho;
       std::vector<float> iEta[2];
       std::vector<float> iPhi[2];
@@ -162,6 +158,7 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
       std::vector<float> Hit_X[2];
       std::vector<float> Hit_Y[2];
       std::vector<float> Hit_Z[2];
+
 
       std::vector<float> RecHitFrac[2];
       std::vector<float> RecHitEn[2];
@@ -247,53 +244,43 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
          RecHitFlag_kESTS15Sigmas
       };
 
+      std::vector<float> Ele_pt_;
+      std::vector<float> Ele_eta_;
+      std::vector<float> Ele_phi_;
+      std::vector<float> Ele_energy_;
+      std::vector<float> Ele_energy_error_;
+      std::vector<float> Ele_ecal_mustache_energy_;
+      std::vector<float> Ele_energy_ECAL_pho;
+      std::vector<float> Ele_energyUncertainty_ECAL_pho;
 
-      std::vector<float> Pho_pt_;
-      std::vector<float> Pho_eta_;
-      std::vector<float> Pho_phi_;
+      std::vector<float> Ele_R9;
+      std::vector<float> Ele_S4;
+      std::vector<float> Ele_SigIEIE;
+      std::vector<float> Ele_SigIPhiIPhi;
+      std::vector<float> Ele_SCEtaW;
+      std::vector<float> Ele_SCPhiW;
+      std::vector<float> Ele_CovIEtaIEta;
+      std::vector<float> Ele_CovIEtaIPhi;
+      std::vector<float> Ele_ESSigRR;
+      std::vector<float> Ele_SCRawE;
+      std::vector<float> Ele_SC_ESEnByRawE;
+      std::vector<float> Ele_HadOverEm;
 
-      std::vector<float> Pho_cluster_seed_x;
-      std::vector<float> Pho_cluster_seed_y;
-      std::vector<float> Pho_cluster_seed_z;
+      // Electron Isolation Variables
+      vector<float> Ele_sumChargedHadronPt;
+      vector<float> Ele_sumChargedParticlePt;
+      vector<float> Ele_sumEcalClusterEt;
+      vector<float> Ele_sumHcalClusterEt;
+      vector<float> Ele_sumNeutralHadronEt;
+      vector<float> Ele_sumPhotonEt;
+      vector<float> Ele_sumPUPt;
+      vector<float>  Ele_EcalPFClusterIso;
+      vector<float>  Ele_HcalPFClusterIso;
 
-      std::vector<float> Pho_cluster_seed_eta;
-      std::vector<float> Pho_cluster_seed_phi;
-
-      std::vector<float> Pho_energy_;
-      std::vector<float> Pho_ecal_mustache_energy_;
-
-      std::vector<float> Pho_R9;
-      std::vector<float> Pho_S4;
-      std::vector<float> Pho_SigIEIE;
-      std::vector<float> Pho_SigIPhiIPhi;
-      std::vector<float> Pho_SCEtaW;
-      std::vector<float> Pho_SCPhiW;
-      std::vector<float> Pho_CovIEtaIEta;
-      std::vector<float> Pho_CovIEtaIPhi;
-      std::vector<float> Pho_ESSigRR;
-      std::vector<float> Pho_SCRawE;
-      std::vector<float> Pho_SC_ESEnByRawE;
-      std::vector<float> Pho_HadOverEm;
-
-      // Photon Isolation Variables
-
-      vector<float>  Pho_PFChIso;
-      vector<float>  Pho_PFChPVIso;
-      vector<float>  Pho_PFPhoIso;
-      vector<float>  Pho_PFNeuIso;
-      vector<float>  Pho_PFChWorstVetoIso;
-      vector<float>  Pho_PFChWorstIso;
-      vector<float>  Pho_EcalPFClusterIso;
-      vector<float>  Pho_HcalPFClusterIso;
-
-      vector<float> Pho_CorrectedEnergy;
-      vector<float> Pho_CorrectedEnergyError;
-
-      std::vector<float> Pho_Gen_Pt;
-      std::vector<float> Pho_Gen_Eta;
-      std::vector<float> Pho_Gen_Phi;
-      std::vector<float> Pho_Gen_E;
-
+      std::vector<float> Ele_Gen_Pt;
+      std::vector<float> Ele_Gen_Eta;
+      std::vector<float> Ele_Gen_Phi;
+      std::vector<float> Ele_Gen_E;
 
       std::vector<int> passLooseId_;
       std::vector<int> passMediumId_;
@@ -304,21 +291,30 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
 
       // -----------------Handles--------------------------
       edm::Handle<double> rhoHandle;
-      edm::Handle<EcalRecHitCollection> EBRechitsHandle;
-      edm::Handle<EcalRecHitCollection> EERechitsHandle;
-      edm::Handle<EcalRecHitCollection> ESRechitsHandle;
-      edm::Handle<edm::View<reco::Photon> > photons;
-      edm::Handle<edm::View<reco::GenParticle> > genParticles;
+      edm::Handle<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > > EBRechitsHandle;
+      edm::Handle<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > > EERechitsHandle;
+      edm::Handle<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > > ESRechitsHandle;
+      //edm::Handle<EcalRecHitCollection> EBRechitsHandle;
+      //edm::Handle<EcalRecHitCollection> EERechitsHandle;
+      //edm::Handle<EcalRecHitCollection> ESRechitsHandle;
+      edm::Handle<std::vector<pat::Electron> > electrons;
+      edm::Handle<std::vector<pat::Photon> > photons;
+      edm::Handle<std::vector<pat::PackedGenParticle> > genParticles;
+      edm::Handle<edm::ValueMap<bool> > loose_id_decisions;
       edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
       edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
-
       //---------------- Input Tags-----------------------
+      edm::EDGetTokenT<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > > recHitCollectionEBToken_;
+      edm::EDGetTokenT<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > > recHitCollectionEEToken_;
+      edm::EDGetTokenT<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > > recHitCollectionESToken_;
       edm::EDGetTokenT<double> rhoToken_;
-      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEBToken_;
-      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEEToken_;
-      edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionESToken_;
+      //edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEBToken_;
+      //edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEEToken_;
+      //edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionESToken_;
+      edm::EDGetToken electronsToken_;
       edm::EDGetToken photonsToken_;
-      edm::EDGetTokenT<edm::View<reco::GenParticle> > genParticlesToken_;
+      edm::EDGetTokenT<std::vector<pat::PackedGenParticle> > genParticlesToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > eleLooseIdMapToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
 
