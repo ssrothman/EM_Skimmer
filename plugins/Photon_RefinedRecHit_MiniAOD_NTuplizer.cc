@@ -13,7 +13,12 @@ Photon_RefinedRecHit_MiniAOD_NTuplizer::Photon_RefinedRecHit_MiniAOD_NTuplizer(c
    recHitCollectionESToken_(consumes<edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> > >(iConfig.getParameter<edm::InputTag>("esRecHits"))),
    rhoToken_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoFastJet"))),
    eleMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleMediumIdMap"))),
-   eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap")))
+   eleTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleTightIdMap"))),
+   photonLooseIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("photonLooseIdMap"))),
+   photonMediumIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("photonMediumIdMap"))),
+   photonTightIdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("photonTightIdMap"))),
+   photonMVAwp80IdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("photonMVAwp80IdMap"))),
+   photonMVAwp90IdMapToken_(consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("photonMVAwp90IdMap")))
 {
    //now do what ever initialization is needed
    DEBUG = iConfig.getParameter<bool>("debug");
@@ -88,6 +93,11 @@ Photon_RefinedRecHit_MiniAOD_NTuplizer::analyze(const edm::Event& iEvent, const 
    iEvent.getByToken(genParticlesToken_, genParticles);
    iEvent.getByToken(eleMediumIdMapToken_, medium_id_decisions);
    iEvent.getByToken(eleTightIdMapToken_ , tight_id_decisions);
+   iEvent.getByToken(photonLooseIdMapToken_, photon_loose_id_decisions);
+   iEvent.getByToken(photonMediumIdMapToken_, photon_medium_id_decisions);
+   iEvent.getByToken(photonTightIdMapToken_, photon_tight_id_decisions);
+   iEvent.getByToken(photonMVAwp80IdMapToken_, photon_mvawp80_id_decisions);
+   iEvent.getByToken(photonMVAwp90IdMapToken_, photon_mvawp90_id_decisions);
 
    if (DEBUG) cout << "getting geometry"<< endl;
    ESHandle<CaloGeometry> pG;
@@ -121,6 +131,7 @@ Photon_RefinedRecHit_MiniAOD_NTuplizer::analyze(const edm::Event& iEvent, const 
       if (nPhotons_ == 2) break;
       
       const auto pho = photons->at(i);
+      const edm::Ptr<pat::Photon> phoPtr(photons, i);
 
       if( pho.pt() < 10 ) continue;
    
@@ -401,6 +412,17 @@ Photon_RefinedRecHit_MiniAOD_NTuplizer::analyze(const edm::Event& iEvent, const 
       Pho_CorrectedEnergy.push_back(pho.getCorrectedEnergy(pho.getCandidateP4type()));
       Pho_CorrectedEnergyError.push_back(pho.getCorrectedEnergyError(pho.getCandidateP4type())); // Error in corrected energy
 
+      bool gammaLoosePass  = (*photon_loose_id_decisions)[phoPtr];
+      bool gammaMediumPass = (*photon_medium_id_decisions)[phoPtr];
+      bool gammaTightPass = (*photon_tight_id_decisions)[phoPtr];
+      bool gammaMVAwp80Pass = (*photon_mvawp80_id_decisions)[phoPtr];
+      bool gammaMVAwp90Pass = (*photon_mvawp90_id_decisions)[phoPtr];
+
+      Pho_loose_id.push_back(gammaLoosePass);
+      Pho_medium_id.push_back(gammaMediumPass);
+      Pho_tight_id.push_back(gammaTightPass);
+      Pho_mvawp80_id.push_back(gammaMVAwp80Pass);
+      Pho_mvawp90_id.push_back(gammaMVAwp90Pass);
 
    }
    
@@ -566,6 +588,12 @@ Photon_RefinedRecHit_MiniAOD_NTuplizer::beginJob()
    T->Branch("Pho_cluster_seed_z", &Pho_cluster_seed_z);
    T->Branch("Pho_cluster_seed_eta", &Pho_cluster_seed_eta);
    T->Branch("Pho_cluster_seed_phi", &Pho_cluster_seed_phi);
+
+   T->Branch("Pho_loose_id", &Pho_loose_id);
+   T->Branch("Pho_medium_id", &Pho_medium_id);
+   T->Branch("Pho_tight_id", &Pho_tight_id);
+   T->Branch("Pho_mvawp80_id", &Pho_mvawp80_id);
+   T->Branch("Pho_mvawp90_id", &Pho_mvawp90_id);
 
    T->Branch("energy", &Pho_energy_);
    T->Branch("energy_ecal_mustache", &Pho_ecal_mustache_energy_);
@@ -812,6 +840,12 @@ void Photon_RefinedRecHit_MiniAOD_NTuplizer::ClearTreeVectors()
    Pho_cluster_seed_z.clear();
    Pho_cluster_seed_eta.clear();
    Pho_cluster_seed_phi.clear();
+
+   Pho_loose_id.clear();
+   Pho_medium_id.clear();
+   Pho_tight_id.clear();
+   Pho_mvawp80_id.clear();
+   Pho_mvawp90_id.clear();
 
    Pho_energy_.clear();
    Pho_ecal_mustache_energy_.clear();

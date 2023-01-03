@@ -14,9 +14,10 @@ options.parseArguments()
 process.source = cms.Source("PoolSource",
                                 # replace 'myfile.root' with the source file you want to use
                                 fileNames = cms.untracked.vstring(
-            'root://cms-xrd-global.cern.ch//store/data/Run2018A/EGamma/MINIAOD/12Nov2019_UL2018-v2/70000/3DB4D471-74C3-5E46-87FA-B6867DBC7AED.root',
-                )
-                            )
+            #'root://cms-xrd-global.cern.ch//store/data/Run2018A/EGamma/MINIAOD/12Nov2019_UL2018-v2/70000/3DB4D471-74C3-5E46-87FA-B6867DBC7AED.root',
+            'file:EEDF16FC-5BD5-2D49-9DF8-DA84826DF752.root'
+            )
+)
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 
@@ -48,8 +49,8 @@ process.nTuplelize = cms.EDAnalyzer('Photon_RefinedRecHit_MiniAOD_NTuplizer',
         eleMediumIdMap = cms.InputTag(""),
         eleTightIdMap = cms.InputTag(""),
         #Calo clusters
-        ebNeighbourXtalMap = cms.FileInPath("EM_GNN_ID/EM_Skimmer/data/EB_xtal_dR0p3_map.root"),
-        eeNeighbourXtalMap = cms.FileInPath("EM_GNN_ID/EM_Skimmer/data/EE_xtal_dR0p3_map.root")
+        ebNeighbourXtalMap = cms.FileInPath("EM_ID_GNN/EM_Skimmer/data/EB_xtal_dR0p3_map.root"),
+        eeNeighbourXtalMap = cms.FileInPath("EM_ID_GNN/EM_Skimmer/data/EE_xtal_dR0p3_map.root")
 	)
 
 
