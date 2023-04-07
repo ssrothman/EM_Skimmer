@@ -259,6 +259,12 @@ class Photon_RefinedRecHit_MiniAOD_NTuplizer : public edm::one::EDAnalyzer<edm::
       std::vector<float> Pho_energy_;
       std::vector<float> Pho_ecal_mustache_energy_;
 
+      std::vector<float> Pho_loose_id;
+      std::vector<float> Pho_medium_id;
+      std::vector<float> Pho_tight_id;
+      std::vector<float> Pho_mvawp80_id;
+      std::vector<float> Pho_mvawp90_id;
+
       std::vector<float> Pho_R9;
       std::vector<float> Pho_S4;
       std::vector<float> Pho_SigIEIE;
@@ -308,6 +314,12 @@ class Photon_RefinedRecHit_MiniAOD_NTuplizer : public edm::one::EDAnalyzer<edm::
       edm::Handle<std::vector<pat::PackedGenParticle> > genParticles;
       edm::Handle<edm::ValueMap<bool> > medium_id_decisions;
       edm::Handle<edm::ValueMap<bool> > tight_id_decisions;
+      edm::Handle<edm::ValueMap<bool> > photon_loose_id_decisions;
+      edm::Handle<edm::ValueMap<bool> > photon_medium_id_decisions;
+      edm::Handle<edm::ValueMap<bool> > photon_tight_id_decisions;
+      edm::Handle<edm::ValueMap<bool> > photon_mvawp80_id_decisions;
+      edm::Handle<edm::ValueMap<bool> > photon_mvawp90_id_decisions;
+
 
       //---------------- Input Tags-----------------------
       edm::EDGetTokenT<EcalRecHitCollection> recHitCollectionEBToken_;
@@ -316,6 +328,11 @@ class Photon_RefinedRecHit_MiniAOD_NTuplizer : public edm::one::EDAnalyzer<edm::
       edm::EDGetTokenT<double> rhoToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleMediumIdMapToken_;
       edm::EDGetTokenT<edm::ValueMap<bool> > eleTightIdMapToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > photonLooseIdMapToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > photonMediumIdMapToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > photonTightIdMapToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > photonMVAwp80IdMapToken_;
+      edm::EDGetTokenT<edm::ValueMap<bool> > photonMVAwp90IdMapToken_;
       edm::EDGetToken photonsToken_;
       edm::EDGetTokenT<std::vector<pat::PackedGenParticle> > genParticlesToken_;
 
