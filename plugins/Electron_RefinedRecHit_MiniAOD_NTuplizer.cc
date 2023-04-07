@@ -196,8 +196,9 @@ Electron_RefinedRecHit_MiniAOD_NTuplizer::analyze(const edm::Event& iEvent, cons
       Ele_eta_.push_back( sc->eta() );
       Ele_phi_.push_back( sc->phi() );
       Ele_energy_.push_back( ele.energy() );
-      Ele_energy_error_.push_back( ele.correctedEcalEnergyError() );
-      Ele_ecal_mustache_energy_.push_back( ele.correctedEcalEnergy() );
+      Ele_correctedEcalEnergy_error_.push_back( ele.correctedEcalEnergyError() );
+      Ele_correctedEcalEnergy_.push_back( ele.correctedEcalEnergy());
+      Ele_ecal_mustache_energy_.push_back( sc->energy()  );
       Ele_R9.push_back(ele.full5x5_r9());
       Ele_SigIEIE.push_back(ele.full5x5_sigmaIetaIeta());
       Ele_SigIPhiIPhi.push_back(ele.full5x5_sigmaIphiIphi());
@@ -419,7 +420,8 @@ Electron_RefinedRecHit_MiniAOD_NTuplizer::beginJob()
    T->Branch("eta" ,  &Ele_eta_ );
    T->Branch("phi" ,  &Ele_phi_ );
    T->Branch("energy", &Ele_energy_);
-   T->Branch("energy_error", &Ele_energy_error_);
+   T->Branch("energy_corrected_error", &Ele_correctedEcalEnergy_error_);
+   T->Branch("energy_corrected", &Ele_correctedEcalEnergy_);
    T->Branch("energy_ecal_mustache", &Ele_ecal_mustache_energy_);
    T->Branch("Ele_energy_ECAL_pho", &Ele_energy_ECAL_pho);
    T->Branch("Ele_energyUncertainty_ECAL_pho", &Ele_energyUncertainty_ECAL_pho);
@@ -627,7 +629,8 @@ void Electron_RefinedRecHit_MiniAOD_NTuplizer::ClearTreeVectors()
    Ele_eta_.clear();
    Ele_phi_.clear();
    Ele_energy_.clear();
-   Ele_energy_error_.clear();
+   Ele_correctedEcalEnergy_error_.clear();
+   Ele_correctedEcalEnergy_.clear();
    Ele_ecal_mustache_energy_.clear();
    Ele_energy_ECAL_pho.clear();
    Ele_energyUncertainty_ECAL_pho.clear();

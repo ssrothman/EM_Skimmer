@@ -248,7 +248,8 @@ class Electron_RefinedRecHit_MiniAOD_NTuplizer : public edm::one::EDAnalyzer<edm
       std::vector<float> Ele_eta_;
       std::vector<float> Ele_phi_;
       std::vector<float> Ele_energy_;
-      std::vector<float> Ele_energy_error_;
+      std::vector<float> Ele_correctedEcalEnergy_;
+      std::vector<float> Ele_correctedEcalEnergy_error_;
       std::vector<float> Ele_ecal_mustache_energy_;
       std::vector<float> Ele_energy_ECAL_pho;
       std::vector<float> Ele_energyUncertainty_ECAL_pho;
