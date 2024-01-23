@@ -297,6 +297,9 @@ class Photon_RefinedRecHit_MiniAOD_NTuplizer : public edm::one::EDAnalyzer<edm::
       std::vector<float> Pho_Gen_Phi;
       std::vector<float> Pho_Gen_E;
 
+      std::vector<int> Pho_GenIdx;
+      std::vector<float> Pho_DR;
+
 
       std::vector<int> passLooseId_;
       std::vector<int> passMediumId_;
