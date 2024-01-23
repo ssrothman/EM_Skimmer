@@ -9,7 +9,7 @@ process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
 
-process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(2500)
+process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 
 #options = VarParsing.VarParsing('standard')
 options = VarParsing.VarParsing('analysis')
@@ -29,7 +29,8 @@ process.source = cms.Source("PoolSource",
                                 # replace 'myfile.root' with the source file you want to use
                                 fileNames = cms.untracked.vstring(
                                 #'/store/mc/RunIISummer20UL18MiniAOD/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v11_L1v1-v1/260000/8D4B008D-BE14-DD47-8949-C4640525DA1F.root'
-                                'file:EEDF16FC-5BD5-2D49-9DF8-DA84826DF752.root'
+                                #'file:EEDF16FC-5BD5-2D49-9DF8-DA84826DF752.root'
+                                '/store/mc/RunIISummer20UL18MiniAODv2/QCD_Pt-30toInf_DoubleEMEnriched_MGG-40to80_TuneCP5_13TeV-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v2/2560000/04CAD391-974F-104E-97C5-8FCB48DD8874.root'
                                 )
                             )
 
