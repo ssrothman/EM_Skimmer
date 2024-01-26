@@ -432,14 +432,14 @@ Electron_RefinedRecHit_NTuplizer::beginJob()
    //   T->Branch("passMVAMediumId", &passMVAMediumId_);
 
    T->Branch("Ele_R9"  ,  &Ele_R9);
-   T->Branch("Ele_S4"  ,  &Ele_S4);
+   //T->Branch("Ele_S4"  ,  &Ele_S4);
    T->Branch("Ele_SigIEIE"  ,  &Ele_SigIEIE);
    T->Branch("Ele_SigIPhiIPhi" , &Ele_SigIPhiIPhi);
    T->Branch("Ele_SCEtaW"  ,  &Ele_SCEtaW);
    T->Branch("Ele_SCPhiW"  ,  &Ele_SCPhiW);
-   T->Branch("Ele_CovIEtaIEta"  ,  &Ele_CovIEtaIEta);
-   T->Branch("Ele_CovIEtaIPhi"  ,  &Ele_CovIEtaIPhi);
-   T->Branch("Ele_ESSigRR"  ,  &Ele_ESSigRR);
+   //T->Branch("Ele_CovIEtaIEta"  ,  &Ele_CovIEtaIEta);
+   //T->Branch("Ele_CovIEtaIPhi"  ,  &Ele_CovIEtaIPhi);
+   //T->Branch("Ele_ESSigRR"  ,  &Ele_ESSigRR);
    T->Branch("Ele_SCRawE"  ,  &Ele_SCRawE);
    T->Branch("Ele_SC_ESEnByRawE"  ,  &Ele_SC_ESEnByRawE);
    T->Branch("Ele_HadOverEm"  ,  &Ele_HadOverEm);

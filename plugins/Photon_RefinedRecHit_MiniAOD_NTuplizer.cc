@@ -619,19 +619,15 @@ Photon_RefinedRecHit_MiniAOD_NTuplizer::beginJob()
    T->Branch("energy", &Pho_energy_);
    T->Branch("energy_ecal_mustache", &Pho_ecal_mustache_energy_);
 
-   T->Branch("passMediumId" ,  &passMediumId_ );
-   T->Branch("passTightId"  ,  &passTightId_ );
-   T->Branch("passMVAMediumId", &passMVAMediumId_);
-
    T->Branch("Pho_R9"  ,  &Pho_R9);
-   T->Branch("Pho_S4"  ,  &Pho_S4);
+   //T->Branch("Pho_S4"  ,  &Pho_S4);
    T->Branch("Pho_SigIEIE"  ,  &Pho_SigIEIE);
    T->Branch("Pho_SigIPhiIPhi" , &Pho_SigIPhiIPhi);
    T->Branch("Pho_SCEtaW"  ,  &Pho_SCEtaW);
    T->Branch("Pho_SCPhiW"  ,  &Pho_SCPhiW);
-   T->Branch("Pho_CovIEtaIEta"  ,  &Pho_CovIEtaIEta);
-   T->Branch("Pho_CovIEtaIPhi"  ,  &Pho_CovIEtaIPhi);
-   T->Branch("Pho_ESSigRR"  ,  &Pho_ESSigRR);
+   //T->Branch("Pho_CovIEtaIEta"  ,  &Pho_CovIEtaIEta);
+   //T->Branch("Pho_CovIEtaIPhi"  ,  &Pho_CovIEtaIPhi);
+   //T->Branch("Pho_ESSigRR"  ,  &Pho_ESSigRR);
    T->Branch("Pho_SCRawE"  ,  &Pho_SCRawE);
    T->Branch("Pho_SC_ESEnByRawE"  ,  &Pho_SC_ESEnByRawE);
    T->Branch("Pho_HadOverEm"  ,  &Pho_HadOverEm);
@@ -874,14 +870,14 @@ void Photon_RefinedRecHit_MiniAOD_NTuplizer::ClearTreeVectors()
    Pho_energy_.clear();
    Pho_ecal_mustache_energy_.clear();
    Pho_R9.clear();
-   Pho_S4.clear();
+   //Pho_S4.clear();
    Pho_SigIEIE.clear();
    Pho_SigIPhiIPhi.clear();
    Pho_SCEtaW.clear();
    Pho_SCPhiW.clear();
-   Pho_CovIEtaIEta.clear();
-   Pho_CovIEtaIPhi.clear();
-   Pho_ESSigRR.clear();
+   //Pho_CovIEtaIEta.clear();
+   //Pho_CovIEtaIPhi.clear();
+   //Pho_ESSigRR.clear();
    Pho_SCRawE.clear();
    Pho_SC_ESEnByRawE.clear();
    Pho_HadOverEm.clear();
@@ -907,10 +903,6 @@ void Photon_RefinedRecHit_MiniAOD_NTuplizer::ClearTreeVectors()
       Pho_GenIdx.clear();
       Pho_DR.clear();
    }
-
-   passMediumId_.clear();
-   passTightId_ .clear();
-   passMVAMediumId_.clear();
 
    isTrue_.clear();
 }
