@@ -254,6 +254,26 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
             Ele_Gen_E.push_back(part->energy());
          }
       }
+
+      //Do gen-matching 
+      Ele_GenIdx.resize(Ele_pt_.size(), -1);
+      Ele_DR.resize(Ele_pt_.size(), -1);
+      
+      std::vector<bool> taken(Ele_Gen_Pt.size(), false);
+      for(unsigned iReco=0; iReco<Ele_pt_.size(); ++iReco){
+          std::vector<double> distances(Ele_Gen_Pt.size(), 99999);
+          for(unsigned iGen=0; iGen<Ele_Gen_Pt.size(); ++iGen){
+            if(taken[iGen]){
+              continue;
+            }
+            double dist = reco::deltaR(Ele_Gen_Eta[iGen], Ele_Gen_Phi[iGen], Ele_eta_[iReco], Ele_phi_[iReco]);
+            distances[iGen] = dist;
+          }
+          int minIndex = std::min_element(distances.begin(), distances.end()) - distances.begin();
+          printf("The minIndex is %d\n", minIndex);
+          Ele_GenIdx[iReco] = minIndex;
+          Ele_DR[iReco] = distances[minIndex];
+      }
    }
 
    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -440,6 +460,9 @@ Electron_RefinedRecHit_NTuplizer::beginJob()
       T->Branch("Ele_Gen_Eta" , &Ele_Gen_Eta);
       T->Branch("Ele_Gen_Phi" , &Ele_Gen_Phi);
       T->Branch("Ele_Gen_E" , &Ele_Gen_E);
+
+      T->Branch("Ele_GenIdx", &Ele_GenIdx);
+      T->Branch("Ele_DR", &Ele_DR);
    }
 
    T->Branch("rho", &rho, "rho/F");
@@ -701,6 +724,9 @@ void Electron_RefinedRecHit_NTuplizer::ClearTreeVectors()
    Ele_Gen_Eta.clear();
    Ele_Gen_Phi.clear();
    Ele_Gen_E.clear();
+
+   Ele_GenIdx.clear();
+   Ele_DR.clear();
 
    //passLooseId_.clear();
    passMediumId_.clear();

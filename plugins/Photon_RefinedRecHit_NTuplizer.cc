@@ -383,6 +383,26 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
             Pho_Gen_E.push_back(part->energy());
          }
       }
+
+      //Do gen-matching 
+      Pho_GenIdx.resize(Pho_pt_.size(), -1);
+      Pho_DR.resize(Pho_pt_.size(), -1);
+      
+      std::vector<bool> taken(Pho_Gen_Pt.size(), false);
+      for(unsigned iReco=0; iReco<Pho_pt_.size(); ++iReco){
+          std::vector<double> distances(Pho_Gen_Pt.size(), 99999);
+          for(unsigned iGen=0; iGen<Pho_Gen_Pt.size(); ++iGen){
+            if(taken[iGen]){
+              continue;
+            }
+            double dist = reco::deltaR(Pho_Gen_Eta[iGen], Pho_Gen_Phi[iGen], Pho_eta_[iReco], Pho_phi_[iReco]);
+            distances[iGen] = dist;
+          }
+          int minIndex = std::min_element(distances.begin(), distances.end()) - distances.begin();
+          printf("The minIndex is %d\n", minIndex);
+          Pho_GenIdx[iReco] = minIndex;
+          Pho_DR[iReco] = distances[minIndex];
+      }
    }
 
    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -569,6 +589,9 @@ Photon_RefinedRecHit_NTuplizer::beginJob()
       T->Branch("Pho_Gen_Eta" , &Pho_Gen_Eta);
       T->Branch("Pho_Gen_Phi" , &Pho_Gen_Phi);
       T->Branch("Pho_Gen_E" , &Pho_Gen_E);
+
+      T->Branch("Pho_GenIdx", &Pho_GenIdx);
+      T->Branch("Pho_DR", &Pho_DR);
    }
 
    T->Branch("rho", &rho, "rho/F");
@@ -809,6 +832,9 @@ void Photon_RefinedRecHit_NTuplizer::ClearTreeVectors()
       Pho_Gen_Eta.clear();
       Pho_Gen_Phi.clear();
       Pho_Gen_E.clear();
+
+      Pho_GenIdx.clear();
+      Pho_DR.clear();
    }
 
    passMediumId_.clear();

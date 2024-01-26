@@ -280,6 +280,11 @@ class Electron_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::S
       std::vector<float> Ele_Gen_Phi;
       std::vector<float> Ele_Gen_E;
 
+
+      std::vector<int> Ele_GenIdx;
+      std::vector<float> Ele_DR;
+
+
       std::vector<int> passLooseId_;
       std::vector<int> passMediumId_;
       std::vector<int> passTightId_;

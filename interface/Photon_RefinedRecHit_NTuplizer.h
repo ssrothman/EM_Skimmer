@@ -248,6 +248,7 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
       };
 
 
+
       std::vector<float> Pho_pt_;
       std::vector<float> Pho_eta_;
       std::vector<float> Pho_phi_;
@@ -294,6 +295,8 @@ class Photon_RefinedRecHit_NTuplizer : public edm::one::EDAnalyzer<edm::one::Sha
       std::vector<float> Pho_Gen_Phi;
       std::vector<float> Pho_Gen_E;
 
+      std::vector<int> Pho_GenIdx;
+      std::vector<float> Pho_DR;
 
       std::vector<int> passLooseId_;
       std::vector<int> passMediumId_;

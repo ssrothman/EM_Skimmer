@@ -442,9 +442,6 @@ Photon_RefinedRecHit_MiniAOD_NTuplizer::analyze(const edm::Event& iEvent, const 
          }
       }
 
-      printf("There are %lu gen photons and %lu reco photons\n",
-              Pho_Gen_Pt.size(), Pho_pt_.size());
-
       //Do gen-matching 
       Pho_GenIdx.resize(Pho_pt_.size(), -1);
       Pho_DR.resize(Pho_pt_.size(), -1);
