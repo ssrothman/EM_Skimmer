@@ -402,6 +402,7 @@ Photon_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::Eve
           printf("The minIndex is %d\n", minIndex);
           Pho_GenIdx[iReco] = minIndex;
           Pho_DR[iReco] = distances[minIndex];
+          taken[minIndex] = true;
       }
    }
 

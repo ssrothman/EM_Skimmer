@@ -270,9 +270,9 @@ Electron_RefinedRecHit_NTuplizer::analyze(const edm::Event& iEvent, const edm::E
             distances[iGen] = dist;
           }
           int minIndex = std::min_element(distances.begin(), distances.end()) - distances.begin();
-          printf("The minIndex is %d\n", minIndex);
           Ele_GenIdx[iReco] = minIndex;
           Ele_DR[iReco] = distances[minIndex];
+          taken[minIndex] = true;
       }
    }
 
